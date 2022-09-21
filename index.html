@@ -98,10 +98,10 @@ var camera =
 {
     x:        512., // x position on the map
     y:        800., // y position on the map
-    height:    78., // height of the camera
-    angle:      0., // direction of the camera
+    height:   600., // height of the camera
+    angle:    -1.57, // direction of the camera
     horizon:  100., // horizon position (look up and down)
-    distance: 800   // distance of map
+    distance: 5000   // distance of map
 };
 
 // ---------------------------------------------
@@ -129,7 +129,7 @@ var screendata =
     buf8:      null, // the same array but with bytes
     buf32:     null, // the same array but with 32-Bit words
 
-    backgroundcolor: 0xFFE09090
+    backgroundcolor: 0xFF00A0F0 //BGR
 };
 
 // ---------------------------------------------
@@ -154,6 +154,8 @@ var time = new Date().getTime();
 // for fps display
 var timelastframe = new Date().getTime();
 var frames = 0;
+
+var hiddeny;// = new Int32Array(screenwidth);
 
 // Update the camera for next frame. Dependent on keypresses
 function UpdateCamera()
@@ -331,29 +333,6 @@ function DetectKeysUp(e)
 }
 
 // ---------------------------------------------
-// Fast way to draw vertical lines
-
-function DrawVerticalLine(x, ytop, ybottom, col)
-{
-    x = x|0;
-    ytop = ytop|0;
-    ybottom = ybottom|0;
-    col = col|0;
-    var buf32 = screendata.buf32;
-    var screenwidth = screendata.canvas.width|0;
-    if (ytop < 0) ytop = 0;
-    if (ytop > ybottom) return;
-
-    // get offset on screen for the vertical line
-    var offset = ((ytop * screenwidth) + x)|0;
-    for (var k = ytop|0; k < ybottom|0; k=k+1|0)
-    {
-        buf32[offset|0] = col|0;
-        offset = offset + screenwidth|0;
-    }
-}
-
-// ---------------------------------------------
 // Basic screen handling
 
 function DrawBackground()
@@ -375,39 +354,66 @@ function Flip()
 
 function Render()
 {
-    var mapwidthperiod = map.width - 1;
-    var mapheightperiod = map.height - 1;
+    let mapwidthperiod = map.width - 1;
+    let mapheightperiod = map.height - 1;
 
-    var screenwidth = screendata.canvas.width|0;
-    var sinang = Math.sin(camera.angle);
-    var cosang = Math.cos(camera.angle);
+    let screenwidth = screendata.canvas.width|0;
+    let sinang = Math.sin(camera.angle);
+    let cosang = Math.cos(camera.angle);
 
-    var hiddeny = new Int32Array(screenwidth);
-    for(var i=0; i<screendata.canvas.width|0; i=i+1|0)
+    //we should fill hiddeny with 0s here, but no need if width remains same.
+    for(let i=0; i<screendata.canvas.width|0; i=i+1|0)
         hiddeny[i] = screendata.canvas.height;
 
-    var deltaz = 1.;
-
+    let deltaz = 1.;
+    let buf32 = screendata.buf32;
+    
     // Draw from front to back
-    for(var z=1; z<camera.distance; z+=deltaz)
+    let distance = camera.distance;
+    let height = camera.height;
+    let horizon = camera.horizon|0;
+    let camx = camera.x;
+    let camy = camera.y;
+    let mapaltitude = map.altitude;
+    let mapcolor = map.color;
+    let mapshift = map.shift;
+    let screenwidthinv = 1. / screenwidth;
+    
+    for (let z = 1; z < distance; z += deltaz)
     {
         // 90 degree field of view
-        var plx =  -cosang * z - sinang * z;
-        var ply =   sinang * z - cosang * z;
-        var prx =   cosang * z - sinang * z;
-        var pry =  -sinang * z - cosang * z;
+        let plx =  -cosang * z - sinang * z;
+        let ply =   sinang * z - cosang * z;
+        let prx =   cosang * z - sinang * z;
+        let pry =  -sinang * z - cosang * z;
 
-        var dx = (prx - plx) / screenwidth;
-        var dy = (pry - ply) / screenwidth;
-        plx += camera.x;
-        ply += camera.y;
-        var invz = 1. / z * 240.;
-        for(var i=0; i<screenwidth|0; i=i+1|0)
+        let dx = (prx - plx) / screenwidth;
+        let dy = (pry - ply) / screenwidth;
+        //let dx = (prx - plx) * screenwidthinv; //slower: eliminates a JIT optimisation?
+        //let dy = (pry - ply) * screenwidthinv; //slower: eliminates a JIT optimisation?
+        
+        plx += camx;
+        ply += camy;
+        let invz = 240. * 1. / z;
+        for (let x = 0; x < screenwidth; x++)
         {
-            var mapoffset = ((Math.floor(ply) & mapwidthperiod) << map.shift) + (Math.floor(plx) & mapheightperiod)|0;
-            var heightonscreen = (camera.height - map.altitude[mapoffset]) * invz + camera.horizon|0;
-            DrawVerticalLine(i, heightonscreen|0, hiddeny[i], map.color[mapoffset]);
-            if (heightonscreen < hiddeny[i]) hiddeny[i] = heightonscreen;
+            let mapoffset = ((Math.floor(ply) & mapwidthperiod) << mapshift) + (Math.floor(plx) & mapheightperiod);
+            let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
+            let ybot = hiddeny[x];
+            
+            if (ytop <= ybot)
+            {
+                ytop = ytop < 0 ? 0 : ytop;   
+                // get offset on screen for the vertical line
+                let offset = ((ytop * screenwidth) + x);
+                for (let k = ytop; k < ybot; k++)
+                {
+                    buf32[offset] = mapcolor[mapoffset];
+                    offset = offset + screenwidth;
+                }
+            } //else early exit from drawing vertical lines.
+            
+            hiddeny[x] = ytop < hiddeny[x] ? ytop : hiddeny[x];
             plx += dx;
             ply += dy;
         }
@@ -506,6 +512,9 @@ function OnResizeWindow()
     screendata.bufarray = new ArrayBuffer(screendata.imagedata.width * screendata.imagedata.height * 4);
     screendata.buf8     = new Uint8Array(screendata.bufarray);
     screendata.buf32    = new Uint32Array(screendata.bufarray);
+    
+    hiddeny = new Int32Array(screendata.canvas.width);
+    
     Draw();
 }
 
