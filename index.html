@@ -78,7 +78,10 @@
 </select>
 
 <label for="distancerange">Distance</label>
-<input id="distancerange" type="range" min="100" max="2000" step="1" onchange="camera.distance = this.value">
+<input id="distancerange" type="range" min="100" max="2000" step="1" oninput="camera.distance = this.value">
+
+<label for="yk">yk</label>
+<input id="yk" type="range" min="1" max="1000" step="1" oninput="camera.setyk(this.value)">
 
 <a href="https://github.com/s-macke/VoxelSpace">Github project page</a>
 
@@ -93,6 +96,16 @@
 
 // ---------------------------------------------
 // Viewer information
+var input =
+{
+    forwardbackward: 0,
+    leftright:       0,
+    updown:          0,
+    lookup:          false,
+    lookdown:        false,
+    mouseposition:   null,
+    keypressed:      false
+}
 
 var camera =
 {
@@ -100,8 +113,15 @@ var camera =
     y:        800., // y position on the map
     height:   600., // height of the camera
     angle:    -1.57, // direction of the camera
-    horizon:  100., // horizon position (look up and down)
-    distance: 5000   // distance of map
+    horizon:  280., // horizon position (look up and down)
+    distance: 10000,   // distance of map
+    yk:       240,
+    sliderDragged: true,//false,
+    setyk: function(value) {
+    //this.sliderDragged = true; 
+    console.log("!");
+    this.yk = value;},
+    //input: input
 };
 
 // ---------------------------------------------
@@ -135,16 +155,6 @@ var screendata =
 // ---------------------------------------------
 // Keyboard and mouse interaction
 
-var input =
-{
-    forwardbackward: 0,
-    leftright:       0,
-    updown:          0,
-    lookup:          false,
-    lookdown:        false,
-    mouseposition:   null,
-    keypressed:      false
-}
 
 var updaterunning = false;
 
@@ -156,6 +166,189 @@ var timelastframe = new Date().getTime();
 var frames = 0;
 
 var hiddeny;// = new Int32Array(screenwidth);
+
+// ---------------------------------------------
+// The main render routine
+
+function Render()
+{
+    let mapwidthperiod = map.width - 1;
+    let mapheightperiod = map.height - 1;
+
+    let screenwidth = screendata.canvas.width|0;
+    let sinang = Math.sin(camera.angle);
+    let cosang = Math.cos(camera.angle);
+
+    //we should fill hiddeny with 0s here, but no need if width remains same.
+    for(let i=0; i<screendata.canvas.width|0; i=i+1|0)
+        hiddeny[i] = screendata.canvas.height;
+
+    let deltaz = 1.;
+    let buf32 = screendata.buf32;
+    
+    // Draw from front to back
+    let distance = camera.distance;
+    let height = camera.height;
+    let horizon = camera.horizon|0;
+    let camx = camera.x;
+    let camy = camera.y;
+    let mapaltitude = map.altitude;
+    let mapcolor = map.color;
+    let mapshift = map.shift;
+    let screenwidthinv = 1. / screenwidth;
+    let yk = camera.yk;
+    
+    for (let z = 1; z < distance; z += deltaz) //for each ray step
+    {
+        //we want the two rotated points that delineate the FoV arc in each axis
+        //since z is a world distance, this is in world space.
+        //90 degree FoV results in 1-1-sqrt 2 triangles
+        //left and right points of arc (considering camera lateral arc from top)
+        let plx =  -cosang * z - sinang * z;
+        let prx =   cosang * z - sinang * z;
+        
+        //upper and lower points of arc (considering camera vertical arc from side)
+        let ply =   sinang * z - cosang * z;
+        let pry =  -sinang * z - cosang * z;
+
+        let dx = (prx - plx) / screenwidth;
+        let dy = (pry - ply) / screenwidth;
+        //console.log("d=", dx, dy);
+        //let dx = (prx - plx) * screenwidthinv; //slower: eliminates a JIT optimisation?
+        //let dy = (pry - ply) * screenwidthinv; //slower: eliminates a JIT optimisation?
+        
+        plx += camx;
+        ply += camy;
+        let invz = yk * 1. / z;
+        for (let x = 0; x < screenwidth; x++) //for each screen col
+        {
+            let mapoffset = ((Math.floor(ply) & mapwidthperiod) << mapshift) + (Math.floor(plx) & mapheightperiod);
+            let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
+            
+            //draw the vertical line segment...
+            let ybot = hiddeny[x];
+            let flag = ytop <= ybot ? 1 : 0; // just <?
+            ytop = ytop < 0 ? 0 : ytop;   
+            // get offset on screen for the vertical line
+            let offset = ((ytop * screenwidth) + x);
+            for (let k = ytop; k < ybot; k++)
+            {
+                buf32[offset] = flag * mapcolor[mapoffset];
+                offset        += flag * (screenwidth);
+            }
+            //...draw the vertical line segment.
+            
+            //...This variable loop length is where the problem is for GPU.
+            //Need to restrict it to warp or wavefront size, or multiple thereof
+            //(32 or 64 "threads" / "runs of pixels" at a time.)
+            
+            hiddeny[x] = ytop < hiddeny[x] ? ytop : hiddeny[x];
+            plx += dx;
+            ply += dy;
+        }
+        deltaz += 0.01; //OPTIMISE making z non-linear would be cheaper for same visual result.
+    }
+}
+
+
+// ---------------------------------------------
+// Draw the next frame
+
+function Draw()
+{
+    updaterunning = true;
+    UpdateCamera();
+    DrawBackground();
+    Render();
+    Flip();
+    frames++;
+/*
+    if ((!input.keypressed) || (!camera.sliderDragged))
+    {
+        updaterunning = false;
+        console.log("nada");
+    } else
+    */
+    {
+        window.requestAnimationFrame(Draw, 0);
+    }
+}
+
+// ---------------------------------------------
+// Init routines
+
+// Util class for downloading the png
+function DownloadImagesAsync(urls) {
+    return new Promise(function(resolve, reject) {
+
+        var pending = urls.length;
+        var result = [];
+        if (pending === 0) {
+            resolve([]);
+            return;
+        }
+        urls.forEach(function(url, i) {
+            var image = new Image();
+            //image.addEventListener("load", function() {
+            image.onload = function() {
+                var tempcanvas = document.createElement("canvas");
+                var tempcontext = tempcanvas.getContext("2d");
+                tempcanvas.width = map.width;
+                tempcanvas.height = map.height;
+                tempcontext.drawImage(image, 0, 0, map.width, map.height);
+                result[i] = tempcontext.getImageData(0, 0, map.width, map.height).data;
+                pending--;
+                if (pending === 0) {
+                    resolve(result);
+                }
+            };
+            image.src = url;
+        });
+    });
+}
+
+function LoadMap(filenames)
+{
+    var files = filenames.split(";");
+    DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(OnLoadedImages);
+}
+
+function OnLoadedImages(result)
+{
+    var datac = result[0];
+    var datah = result[1];
+    for(var i=0; i<map.width*map.height; i++)
+    {
+        map.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
+        map.altitude[i] = datah[i<<2];
+    }
+    Draw();
+}
+
+function OnResizeWindow()
+{
+    screendata.canvas = document.getElementById('fullscreenCanvas');
+
+    var aspect = window.innerWidth / window.innerHeight;
+
+    screendata.canvas.width = window.innerWidth<800?window.innerWidth:800;
+    screendata.canvas.height = screendata.canvas.width / aspect;
+
+    if (screendata.canvas.getContext)
+    {
+        screendata.context = screendata.canvas.getContext('2d');
+        screendata.imagedata = screendata.context.createImageData(screendata.canvas.width, screendata.canvas.height);
+    }
+
+    screendata.bufarray = new ArrayBuffer(screendata.imagedata.width * screendata.imagedata.height * 4);
+    screendata.buf8     = new Uint8Array(screendata.bufarray);
+    screendata.buf32    = new Uint32Array(screendata.bufarray);
+    
+    hiddeny = new Int32Array(screendata.canvas.width);
+    
+    Draw();
+}
+
 
 // Update the camera for next frame. Dependent on keypresses
 function UpdateCamera()
@@ -179,6 +372,7 @@ function UpdateCamera()
         camera.height += input.updown * (current-time)*0.03;
         input.keypressed = true;
     }
+    /*
     if (input.lookup)
     {
         camera.horizon += 2 * (current-time)*0.03;
@@ -189,7 +383,7 @@ function UpdateCamera()
         camera.horizon -= 2 * (current-time)*0.03;
         input.keypressed = true;
     }
-
+    */
     // Collision detection. Don't fly below the surface.
     var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
     if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 10;
@@ -244,8 +438,8 @@ function DetectMouseMove(e)
     var currentMousePosition = GetMousePosition(e);
 
     input.leftright = (input.mouseposition[0] - currentMousePosition[0]) / window.innerWidth * 2;
-    camera.horizon  = 100 + (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 500;
-    input.updown    = (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
+    //camera.horizon  = 0 + (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 280;
+    //input.updown    = (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
 }
 
 
@@ -349,182 +543,45 @@ function Flip()
     screendata.context.putImageData(screendata.imagedata, 0, 0);
 }
 
-// ---------------------------------------------
-// The main render routine
 
-function Render()
+var tiltData =
 {
-    let mapwidthperiod = map.width - 1;
-    let mapheightperiod = map.height - 1;
-
-    let screenwidth = screendata.canvas.width|0;
-    let sinang = Math.sin(camera.angle);
-    let cosang = Math.cos(camera.angle);
-
-    //we should fill hiddeny with 0s here, but no need if width remains same.
-    for(let i=0; i<screendata.canvas.width|0; i=i+1|0)
-        hiddeny[i] = screendata.canvas.height;
-
-    let deltaz = 1.;
-    let buf32 = screendata.buf32;
-    
-    // Draw from front to back
-    let distance = camera.distance;
-    let height = camera.height;
-    let horizon = camera.horizon|0;
-    let camx = camera.x;
-    let camy = camera.y;
-    let mapaltitude = map.altitude;
-    let mapcolor = map.color;
-    let mapshift = map.shift;
-    let screenwidthinv = 1. / screenwidth;
-    
-    for (let z = 1; z < distance; z += deltaz)
-    {
-        // 90 degree field of view
-        let plx =  -cosang * z - sinang * z;
-        let ply =   sinang * z - cosang * z;
-        let prx =   cosang * z - sinang * z;
-        let pry =  -sinang * z - cosang * z;
-
-        let dx = (prx - plx) / screenwidth;
-        let dy = (pry - ply) / screenwidth;
-        //let dx = (prx - plx) * screenwidthinv; //slower: eliminates a JIT optimisation?
-        //let dy = (pry - ply) * screenwidthinv; //slower: eliminates a JIT optimisation?
-        
-        plx += camx;
-        ply += camy;
-        let invz = 240. * 1. / z;
-        for (let x = 0; x < screenwidth; x++)
-        {
-            let mapoffset = ((Math.floor(ply) & mapwidthperiod) << mapshift) + (Math.floor(plx) & mapheightperiod);
-            let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
-            let ybot = hiddeny[x];
-            
-            if (ytop <= ybot)
-            {
-                ytop = ytop < 0 ? 0 : ytop;   
-                // get offset on screen for the vertical line
-                let offset = ((ytop * screenwidth) + x);
-                for (let k = ytop; k < ybot; k++)
-                {
-                    buf32[offset] = mapcolor[mapoffset];
-                    offset = offset + screenwidth;
-                }
-            } //else early exit from drawing vertical lines.
-            
-            hiddeny[x] = ytop < hiddeny[x] ? ytop : hiddeny[x];
-            plx += dx;
-            ply += dy;
-        }
-        deltaz += 0.005;
-    }
-}
-
-
-// ---------------------------------------------
-// Draw the next frame
-
-function Draw()
-{
-    updaterunning = true;
-    UpdateCamera();
-    DrawBackground();
-    Render();
-    Flip();
-    frames++;
-
-    if (!input.keypressed)
-    {
-        updaterunning = false;
-    } else
-    {
-        window.requestAnimationFrame(Draw, 0);
-    }
-}
-
-// ---------------------------------------------
-// Init routines
-
-// Util class for downloading the png
-function DownloadImagesAsync(urls) {
-    return new Promise(function(resolve, reject) {
-
-        var pending = urls.length;
-        var result = [];
-        if (pending === 0) {
-            resolve([]);
-            return;
-        }
-        urls.forEach(function(url, i) {
-            var image = new Image();
-            //image.addEventListener("load", function() {
-            image.onload = function() {
-                var tempcanvas = document.createElement("canvas");
-                var tempcontext = tempcanvas.getContext("2d");
-                tempcanvas.width = map.width;
-                tempcanvas.height = map.height;
-                tempcontext.drawImage(image, 0, 0, map.width, map.height);
-                result[i] = tempcontext.getImageData(0, 0, map.width, map.height).data;
-                pending--;
-                if (pending === 0) {
-                    resolve(result);
-                }
-            };
-            image.src = url;
-        });
-    });
-}
-
-function LoadMap(filenames)
-{
-    var files = filenames.split(";");
-    DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(OnLoadedImages);
-}
-
-function OnLoadedImages(result)
-{
-    var datac = result[0];
-    var datah = result[1];
-    for(var i=0; i<map.width*map.height; i++)
-    {
-        map.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
-        map.altitude[i] = datah[i<<2];
-    }
-    Draw();
-}
-
-function OnResizeWindow()
-{
-    screendata.canvas = document.getElementById('fullscreenCanvas');
-
-    var aspect = window.innerWidth / window.innerHeight;
-
-    screendata.canvas.width = window.innerWidth<800?window.innerWidth:800;
-    screendata.canvas.height = screendata.canvas.width / aspect;
-
-    if (screendata.canvas.getContext)
-    {
-        screendata.context = screendata.canvas.getContext('2d');
-        screendata.imagedata = screendata.context.createImageData(screendata.canvas.width, screendata.canvas.height);
-    }
-
-    screendata.bufarray = new ArrayBuffer(screendata.imagedata.width * screendata.imagedata.height * 4);
-    screendata.buf8     = new Uint8Array(screendata.bufarray);
-    screendata.buf32    = new Uint32Array(screendata.bufarray);
-    
-    hiddeny = new Int32Array(screendata.canvas.width);
-    
-    Draw();
-}
+    pitchAngle: 0
+};
 
 function Init()
 {
+    //tilt
+    for (let i = 0; i < 360; i++)
+    {
+    tiltData.pitchAngle = i * Math.PI / 180.;
+    
+    let rad = 1.0;
+    let tz = rad * Math.cos(tiltData.pitchAngle);
+    let ty = rad * Math.sin(tiltData.pitchAngle);
+    console.log();
+    let ey = 2.0;
+    let yk = 1.0;
+    let yc = 280.;
+    let ys = (ty - ey) * yk / tz + yc; 
+    console.log('pitch='+tiltData.pitchAngle+' tz='+tz+' ty='+ty+' ys='+ys);
+    }
+
     for(var i=0; i<map.width*map.height; i++)
     {
         map.color[i] = 0xFF007050;
         map.altitude[i] = 0;
     }
+    
+    let steps = 0;
+    let deltaz = 1.;
+    let deltaincr = 0.01;
+    for (let z = 1; z < camera.distance; z += deltaz) //for each ray step
+    {
+        deltaz += deltaincr;
+        steps++
+    }
+    console.log("total steps for distance", camera.distance, "with delta incr", deltaincr, "is", steps, "with final deltaz", deltaz);
 
     LoadMap("C1W;D1");
     OnResizeWindow();
@@ -548,6 +605,8 @@ function Init()
         frames = 0;
         timelastframe = current;
     }, 2000);
+
+
 
 }
 
