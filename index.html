@@ -88,15 +88,22 @@
 <label for="columnscale">columnscale</label>
 <input id="columnscale" type="range" min="1" max="10" step="0.01" oninput="camera.columnscale = valueAsNumber">
 
-<label for="yk">vfov</label>
-<input id="yk" type="range" min="0.000001" max="1.0" step="0.000001" oninput="camera.setyk(valueAsNumber)">
 
 <label for="hfov">hfov</label>
 <input id="hfov" type="range" min="0" max="3.141" step="0.01" oninput="camera.hfov = valueAsNumber">
 
+<label for="vfov">vfov</label>
+<input id="vfov" type="range" min="0.000001" max="1.0" step="0.000001" oninput="camera.setvfov(valueAsNumber)">
 
+<label for="que">que</label>
+<input id="que" type="range" min="0.0" max="2.0" step="0.000001" oninput="camera.que = valueAsNumber">
 
-<a href="https://github.com/s-macke/VoxelSpace">Github project page</a>
+<label for="heading">heading</label>
+<input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001" oninput="camera.angle  = valueAsNumber">
+
+<label for="height">height</label>
+<input id="height" type="range" min="0" max="100" step="1" oninput="camera.height = valueAsNumber">
+
 
 </div>
 
@@ -112,6 +119,7 @@
 var input =
 {
     forwardbackward: 0,
+    leftrightturn:   0,
     leftright:       0,
     updown:          0,
     lookup:          false,
@@ -122,21 +130,22 @@ var input =
 
 var camera =
 {
-    x:        512., // x position on the map
-    y:        800., // y position on the map
-    height:   600., // height of the camera
-    angle:    -1.570796327, // direction of the camera
-    horizon:  0, //280., // horizon position (look up and down)
+    x:        457,//512., // x position on the map
+    y:        134,//800., // y position on the map
+    height:   70., // height of the camera
+    angle:    0,//-1.570796327, // direction of the camera
+    horizon:  400, //280., // horizon position (look up and down)
     zNear: 1.,   // near plane distance
     zFar: 10000.,   // far plane distance
-    yk:       0.5,
+    yk: 0.866,//0.7071, //45deg
     hfov: 1.57079633,
-    sliderDragged: true,//false,
-    setyk: function(value) {
-    //this.sliderDragged = true; 
-    console.log("!");
-    this.yk = value;},
+    
+    setvfov: function(value) {
+        this.yk = value;
+        console.log(value, Math.asin(camera.yk) * 180 / Math.PI);
+    },
     columnscale: 1.,
+    que: 1.,
     
     //input: input
 };
@@ -189,17 +198,15 @@ var ymin;// = new Int32Array(screenwidth);
 
 function Render()
 {
+    //let result = 2 * Math.atan(camera.yk * 2) * 180. /  Math.PI;
+   // console.log(camera.yk, Math.asin(camera.yk) * 180 / Math.PI);
+
     let mapwidthperiod = map.width - 1;
     let mapheightperiod = map.height - 1;
 
     let screenwidth = screendata.canvas.width|0;
-    let sinang = Math.sin(camera.angle);
-    let cosang = Math.cos(camera.angle);
-    //let tanang = Math.tan(camera.angle) / 2;
-    //let sinang2 = Math.sin(camera.angle-hhfov);
-    //let cosang2 = Math.cos(camera.angle-hhfov);
-    //let sinang3 = Math.sin(camera.angle+hhfov);
-    //let cosang3 = Math.cos(camera.angle+hhfov);
+    //let sinang = Math.sin(camera.angle);
+    //let cosang = Math.cos(camera.angle);
     
     //TODO what if screen width changes?
     for (let x = 0; x < screenwidth; x++)
@@ -276,9 +283,7 @@ function Render()
         */
 
         //div-by-z causes rays to diverge vertically (no angles stored).
-        //higher yk = narrower vertical FoV.
-        let invz = yk * 1000. / z; 
-        //let invz = yk * z; 
+        let invz = yk * 800. / z;//Math.pow(z, camera.que);
         
         let xStart = 0;
         let xEnd = screenwidth;
@@ -286,6 +291,16 @@ function Render()
         {
             //map 1D coords: cheap modulo wrap on x & y + upshift y.
             let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+            //https://web.archive.org/web/20050206144506/http://www.flipcode.com/articles/voxelland_part02.shtml
+            //the wave-surfing perspective projection formula:
+            //Ys = ( Yv - Ye ) * Yk / Z + Yc
+            //...where:
+            //Ys: coordinate projected onto the screen
+            //Yv: altitude of the voxel column
+            //Ye: coordinate of the eye
+            //Z: distance from the eye to the considered point
+            //Yk: constant to scale the projection, possibly negative
+            //Yc: constant to centre the projection, usually half the screen resolution
             let ytop = (height - columnscale * mapaltitude[mapoffset]) * invz + horizon|0;
             
             //draw the vertical line segment...
@@ -332,7 +347,7 @@ function Draw()
     Flip();
     frames++;
 /*
-    if ((!input.keypressed) || (!camera.sliderDragged))
+    if ((!input.keypressed))
     {
         updaterunning = false;
         console.log("nada");
@@ -425,9 +440,15 @@ function UpdateCamera()
     var current = new Date().getTime();
 
     input.keypressed = false;
+    if (input.leftrightturn != 0)
+    {
+        camera.angle += input.leftrightturn*0.1*(current-time)*0.03;
+        input.keypressed = true;
+    }
     if (input.leftright != 0)
     {
-        camera.angle += input.leftright*0.1*(current-time)*0.03;
+        camera.x += input.leftright * Math.cos(camera.angle) * (current-time)*0.03;
+        camera.y -= input.leftright * Math.sin(camera.angle) * (current-time)*0.03;
         input.keypressed = true;
     }
     if (input.forwardbackward != 0)
@@ -453,10 +474,11 @@ function UpdateCamera()
         input.keypressed = true;
     }
     */
+    /*
     // Collision detection. Don't fly below the surface.
     var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
-    if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 10;
-
+    if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 0;
+*/
     time = current;
 
 }
@@ -493,6 +515,7 @@ function DetectMouseUp()
 {
     input.mouseposition = null;
     input.forwardbackward = 0;
+    input.leftrightturn = 0;
     input.leftright = 0;
     input.updown = 0;
     return;
@@ -503,10 +526,11 @@ function DetectMouseMove(e)
     e.preventDefault();
     if (input.mouseposition == null) return;
     if (input.forwardbackward == 0) return;
+    if (input.leftright == 0) return;
 
     var currentMousePosition = GetMousePosition(e);
 
-    input.leftright = (currentMousePosition[0] - input.mouseposition[0]) / window.innerWidth * 2;
+    input.leftrightturn = (currentMousePosition[0] - input.mouseposition[0]) / window.innerWidth * 2;
     //camera.horizon  = 0 + (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 280;
     //input.updown    = (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
 }
@@ -520,11 +544,11 @@ function DetectKeysDown(e)
     {
     case 37:    // left cursor
     case 65:    // a
-        
+        input.leftright = -3.;
         break;
     case 39:    // right cursor
     case 68:    // d
-        
+        input.leftright = 3.;
         break;
     case 38:    // cursor up
     case 87:    // w
@@ -542,11 +566,11 @@ function DetectKeysDown(e)
         break;
     case 81:    //q
         //input.lookdown = true;
-        input.leftright = -1. * keyTurnRate / screenwidth;
+        input.leftrightturn = -1. * keyTurnRate / screenwidth;
         break;
     case 69:    // e
         //input.lookup = true;
-        input.leftright = +1. * keyTurnRate / screenwidth;
+        input.leftrightturn = +1. * keyTurnRate / screenwidth;
         break;
      default:
         return;
@@ -566,10 +590,11 @@ function DetectKeysUp(e)
     {
     case 37:    // left cursor
     case 65:    // a
-        
+        input.leftright = 0;
         break;
     case 39:    // right cursor
     case 68:    // d
+        input.leftright = 0;
         break;
     case 38:    // cursor up
     case 87:    // w
@@ -586,11 +611,11 @@ function DetectKeysUp(e)
         input.updown = 0;
         break;
     case 81:    //q
-        input.leftright = 0;
+        input.leftrightturn = 0;
         //input.lookdown = false;
         break;
     case 69:    // e
-        input.leftright = 0;
+        input.leftrightturn = 0;
         //input.lookup = false;
         break;
     
