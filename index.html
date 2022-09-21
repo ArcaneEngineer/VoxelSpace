@@ -4,7 +4,6 @@
     <title>Voxel Space project demonstration</title>
     <meta charset="UTF-8">
     <meta name="description" content="Demonstration of the Voxel Space technique">
-    <meta name="author" content="Sebastian Macke">
     <meta name="keywords" content="Voxel, VoxelSpace, Voxel Space, Comanche, landscape, rendering">
     <style>
         html, body {margin: 0; height: 100%; overflow: hidden}
@@ -77,11 +76,25 @@
 <option value="C29W;D16">Map C29W</option>
 </select>
 
-<label for="distancerange">Distance</label>
-<input id="distancerange" type="range" min="100" max="2000" step="1" oninput="camera.distance = this.value">
+<label for="zNear">zNear</label>
+<input id="zNear" type="range" min="1" max="1000" step="1" oninput="camera.zNear = valueAsNumber">
 
-<label for="yk">yk</label>
-<input id="yk" type="range" min="1" max="1000" step="1" oninput="camera.setyk(this.value)">
+<label for="zFar">zFar</label>
+<input id="zFar" type="range" min="100" max="10000" step="1" oninput="camera.zFar = valueAsNumber">
+
+<label for="horizon">horizon pos</label>
+<input id="horizon" type="range" min="0" max="560" step="1" oninput="camera.horizon = valueAsNumber">
+
+<label for="columnscale">columnscale</label>
+<input id="columnscale" type="range" min="1" max="10" step="0.01" oninput="camera.columnscale = valueAsNumber">
+
+<label for="yk">vfov</label>
+<input id="yk" type="range" min="0.000001" max="1.0" step="0.000001" oninput="camera.setyk(valueAsNumber)">
+
+<label for="hfov">hfov</label>
+<input id="hfov" type="range" min="0" max="3.141" step="0.01" oninput="camera.hfov = valueAsNumber">
+
+
 
 <a href="https://github.com/s-macke/VoxelSpace">Github project page</a>
 
@@ -112,15 +125,19 @@ var camera =
     x:        512., // x position on the map
     y:        800., // y position on the map
     height:   600., // height of the camera
-    angle:    -1.57, // direction of the camera
-    horizon:  280., // horizon position (look up and down)
-    distance: 10000,   // distance of map
-    yk:       240,
+    angle:    -1.570796327, // direction of the camera
+    horizon:  0, //280., // horizon position (look up and down)
+    zNear: 1.,   // near plane distance
+    zFar: 10000.,   // far plane distance
+    yk:       0.5,
+    hfov: 1.57079633,
     sliderDragged: true,//false,
     setyk: function(value) {
     //this.sliderDragged = true; 
     console.log("!");
     this.yk = value;},
+    columnscale: 1.,
+    
     //input: input
 };
 
@@ -165,7 +182,7 @@ var time = new Date().getTime();
 var timelastframe = new Date().getTime();
 var frames = 0;
 
-var hiddeny;// = new Int32Array(screenwidth);
+var ymin;// = new Int32Array(screenwidth);
 
 // ---------------------------------------------
 // The main render routine
@@ -178,63 +195,110 @@ function Render()
     let screenwidth = screendata.canvas.width|0;
     let sinang = Math.sin(camera.angle);
     let cosang = Math.cos(camera.angle);
-
-    //we should fill hiddeny with 0s here, but no need if width remains same.
-    for(let i=0; i<screendata.canvas.width|0; i=i+1|0)
-        hiddeny[i] = screendata.canvas.height;
+    //let tanang = Math.tan(camera.angle) / 2;
+    //let sinang2 = Math.sin(camera.angle-hhfov);
+    //let cosang2 = Math.cos(camera.angle-hhfov);
+    //let sinang3 = Math.sin(camera.angle+hhfov);
+    //let cosang3 = Math.cos(camera.angle+hhfov);
+    
+    //TODO what if screen width changes?
+    for (let x = 0; x < screenwidth; x++)
+        ymin[x] = screendata.canvas.height; //TODO OPTIMISE
 
     let deltaz = 1.;
     let buf32 = screendata.buf32;
     
     // Draw from front to back
-    let distance = camera.distance;
+    let zNear = camera.zNear;
+    let zFar  = camera.zFar;
     let height = camera.height;
     let horizon = camera.horizon|0;
     let camx = camera.x;
     let camy = camera.y;
+    let camangle = camera.angle;
     let mapaltitude = map.altitude;
     let mapcolor = map.color;
     let mapshift = map.shift;
-    let screenwidthinv = 1. / screenwidth;
+    //let screenwidthinv = 1. / screenwidth;
     let yk = camera.yk;
+    let columnscale = camera.columnscale;
+    let hfov = camera.hfov;
+    let hhfov = camera.hfov / 2;//half horizontal fov
     
-    for (let z = 1; z < distance; z += deltaz) //for each ray step
+    let lx = Math.sin(camangle-hhfov);
+    let ly = Math.cos(camangle-hhfov);
+    
+    let rx = Math.sin(camangle+hhfov);
+    let ry = Math.cos(camangle+hhfov);
+    
+    for (let z = zNear; z < zFar; z += deltaz) //for each ray step
     {
-        //we want the two rotated points that delineate the FoV arc in each axis
-        //since z is a world distance, this is in world space.
-        //90 degree FoV results in 1-1-sqrt 2 triangles
-        //left and right points of arc (considering camera lateral arc from top)
-        let plx =  -cosang * z - sinang * z;
-        let prx =   cosang * z - sinang * z;
+        //get float world space map coords we sample at L,R edges of screen,
+        //at this current depth (z). (consider camera lateral arc from top)
+        //90 degree FoV, as cos and sine are offset 90 degrees from each other?
+        //without *z, this describes unit circle. 
+        //Stepping between the two positions representing outer edges of screen,
+        //combined with increasing z, causes rays to diverge horizontally.
         
-        //upper and lower points of arc (considering camera vertical arc from side)
-        let ply =   sinang * z - cosang * z;
-        let pry =  -sinang * z - cosang * z;
-
-        let dx = (prx - plx) / screenwidth;
-        let dy = (pry - ply) / screenwidth;
+        let maplxo =  lx * z; //-cosang * z - sinang * z;
+        let maplyo =  ly * z; // sinang * z - cosang * z;
+        let maprxo =  rx * z; // cosang * z - sinang * z;
+        let mapryo =  ry * z; //-sinang * z - cosang * z;
+        
+        //let maplxo =  -cosang * z - sinang * z;
+        //let maplyo =   sinang * z - cosang * z;
+        //let maprxo =   cosang * z - sinang * z;
+        //let mapryo =  -sinang * z - cosang * z;
+        //TODO get our custom points' calc above to have same signs / rotation etc.
+                
+        //world map x,y change as we advance along this ray; derived from 
+        //accelerating z as we move farther along the ray, hence in z loop.
+        //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
+        let dx = (maprxo - maplxo) / screenwidth;
+        let dy = (mapryo - maplyo) / screenwidth;
         //console.log("d=", dx, dy);
-        //let dx = (prx - plx) * screenwidthinv; //slower: eliminates a JIT optimisation?
-        //let dy = (pry - ply) * screenwidthinv; //slower: eliminates a JIT optimisation?
         
-        plx += camx;
-        ply += camy;
-        let invz = yk * 1. / z;
-        for (let x = 0; x < screenwidth; x++) //for each screen col
+        //world map coordinates (float)
+        let maplx = maplxo + camx;
+        let maply = maplyo + camy;
+        let maprx = maprxo + camx;
+        let mapry = mapryo + camy;
+        /*
+        if (z > 900 && z < 1004) 
         {
-            let mapoffset = ((Math.floor(ply) & mapwidthperiod) << mapshift) + (Math.floor(plx) & mapheightperiod);
-            let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
+            //console.log(maplx, maply, " | ", maprx, mapry); 
+            let lmx = Math.floor(maplx) & mapwidthperiod;
+            let lmy = Math.floor(maply) & mapwidthperiod;
+            let rmx = Math.floor(maprx) & mapwidthperiod;
+            let rmy = Math.floor(mapry) & mapwidthperiod;
+            console.log(lmx, lmy, rmx, rmy);
+        }
+        */
+
+        //div-by-z causes rays to diverge vertically (no angles stored).
+        //higher yk = narrower vertical FoV.
+        let invz = yk * 1000. / z; 
+        //let invz = yk * z; 
+        
+        let xStart = 0;
+        let xEnd = screenwidth;
+        for (let x = xStart; x < xEnd; x++) //for each ray
+        {
+            //map 1D coords: cheap modulo wrap on x & y + upshift y.
+            let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+            let ytop = (height - columnscale * mapaltitude[mapoffset]) * invz + horizon|0;
             
             //draw the vertical line segment...
-            let ybot = hiddeny[x];
+            let ybot = ymin[x];
             let flag = ytop <= ybot ? 1 : 0; // just <?
             ytop = ytop < 0 ? 0 : ytop;   
+            
             // get offset on screen for the vertical line
-            let offset = ((ytop * screenwidth) + x);
+            let offset = ((ytop * screenwidth) + x); //init.
             for (let k = ytop; k < ybot; k++)
             {
-                buf32[offset] = flag * mapcolor[mapoffset];
-                offset        += flag * (screenwidth);
+                buf32[offset]  = flag * mapcolor[mapoffset];
+                offset        += flag * screenwidth; //increase for line above.
             }
             //...draw the vertical line segment.
             
@@ -242,11 +306,16 @@ function Render()
             //Need to restrict it to warp or wavefront size, or multiple thereof
             //(32 or 64 "threads" / "runs of pixels" at a time.)
             
-            hiddeny[x] = ytop < hiddeny[x] ? ytop : hiddeny[x];
-            plx += dx;
-            ply += dy;
+            ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
+            
+            //interpolate (gradually "rasterise") between start and end map tile
+            maplx += dx;
+            maply += dy;
         }
-        deltaz += 0.01; //OPTIMISE making z non-linear would be cheaper for same visual result.
+        //orthographic z delta from camera centre. i.e. regardless of the angle
+        //of each ray off camera centre, its z stepping is the same,
+        //as in a sliced CT-scan style view (but perspective, not ortho).
+        deltaz += 0.01; //OPTIMISE increments further away to be greater.
     }
 }
 
@@ -344,7 +413,7 @@ function OnResizeWindow()
     screendata.buf8     = new Uint8Array(screendata.bufarray);
     screendata.buf32    = new Uint32Array(screendata.bufarray);
     
-    hiddeny = new Int32Array(screendata.canvas.width);
+    ymin = new Int32Array(screendata.canvas.width);
     
     Draw();
 }
@@ -363,8 +432,8 @@ function UpdateCamera()
     }
     if (input.forwardbackward != 0)
     {
-        camera.x -= input.forwardbackward * Math.sin(camera.angle) * (current-time)*0.03;
-        camera.y -= input.forwardbackward * Math.cos(camera.angle) * (current-time)*0.03;
+        camera.x += input.forwardbackward * Math.sin(camera.angle) * (current-time)*0.03;
+        camera.y += input.forwardbackward * Math.cos(camera.angle) * (current-time)*0.03;
         input.keypressed = true;
     }
     if (input.updown != 0)
@@ -437,7 +506,7 @@ function DetectMouseMove(e)
 
     var currentMousePosition = GetMousePosition(e);
 
-    input.leftright = (input.mouseposition[0] - currentMousePosition[0]) / window.innerWidth * 2;
+    input.leftright = (currentMousePosition[0] - input.mouseposition[0]) / window.innerWidth * 2;
     //camera.horizon  = 0 + (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 280;
     //input.updown    = (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
 }
@@ -445,15 +514,17 @@ function DetectMouseMove(e)
 
 function DetectKeysDown(e)
 {
+    let screenwidth = screendata.canvas.width|0;
+    let keyTurnRate = 100.;
     switch(e.keyCode)
     {
     case 37:    // left cursor
     case 65:    // a
-        input.leftright = +1.;
+        
         break;
     case 39:    // right cursor
     case 68:    // d
-        input.leftright = -1.;
+        
         break;
     case 38:    // cursor up
     case 87:    // w
@@ -469,13 +540,15 @@ function DetectKeysDown(e)
     case 70:    // f
         input.updown = -2.;
         break;
-    case 69:    // e
-        input.lookup = true;
-        break;
     case 81:    //q
-        input.lookdown = true;
+        //input.lookdown = true;
+        input.leftright = -1. * keyTurnRate / screenwidth;
         break;
-    default:
+    case 69:    // e
+        //input.lookup = true;
+        input.leftright = +1. * keyTurnRate / screenwidth;
+        break;
+     default:
         return;
         break;
     }
@@ -493,11 +566,10 @@ function DetectKeysUp(e)
     {
     case 37:    // left cursor
     case 65:    // a
-        input.leftright = 0;
+        
         break;
     case 39:    // right cursor
     case 68:    // d
-        input.leftright = 0;
         break;
     case 38:    // cursor up
     case 87:    // w
@@ -513,12 +585,15 @@ function DetectKeysUp(e)
     case 70:    // f
         input.updown = 0;
         break;
-    case 69:    // e
-        input.lookup = false;
-        break;
     case 81:    //q
-        input.lookdown = false;
+        input.leftright = 0;
+        //input.lookdown = false;
         break;
+    case 69:    // e
+        input.leftright = 0;
+        //input.lookup = false;
+        break;
+    
     default:
         return;
         break;
@@ -551,6 +626,7 @@ var tiltData =
 
 function Init()
 {
+/*
     //tilt
     for (let i = 0; i < 360; i++)
     {
@@ -566,23 +642,26 @@ function Init()
     let ys = (ty - ey) * yk / tz + yc; 
     console.log('pitch='+tiltData.pitchAngle+' tz='+tz+' ty='+ty+' ys='+ys);
     }
+    */
 
+
+    /*
+    let steps = 0;
+    let deltaz = 1.;
+    let deltaincr = 0.01;
+    for (let z = 1; z < camera.zFar; z += deltaz) //for each ray step
+    {
+        deltaz += deltaincr;
+        steps++
+    }
+    console.log("total steps zNear="," to zFar=", camera.zFar, "with delta incr", deltaincr, "is", steps, "with final deltaz", deltaz);
+    */
+    
     for(var i=0; i<map.width*map.height; i++)
     {
         map.color[i] = 0xFF007050;
         map.altitude[i] = 0;
     }
-    
-    let steps = 0;
-    let deltaz = 1.;
-    let deltaincr = 0.01;
-    for (let z = 1; z < camera.distance; z += deltaz) //for each ray step
-    {
-        deltaz += deltaincr;
-        steps++
-    }
-    console.log("total steps for distance", camera.distance, "with delta incr", deltaincr, "is", steps, "with final deltaz", deltaz);
-
     LoadMap("C1W;D1");
     OnResizeWindow();
 
