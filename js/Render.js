@@ -31,40 +31,42 @@ export default class Render extends CanvasView
         this.elementName = elementName;
     }
     
+    changeScale(scale)
+    {
+        //super.changeScale(this.canvas, 1, scale); 
+        //...cannot change the canvas size, only the style size, or it clears!
+        super.changeElementDimensions(this.canvas, 1, this.xRes, this.yRes);
+        super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
+    }
+    
     initUI()
     {
+        //OLD
         let aspect = window.innerWidth / window.innerHeight;
-        
         let canvas = this.canvas = document.getElementById(this.elementName);
         
-        this.canvas.width = window.innerWidth<800?window.innerWidth:800;
+        this.canvas.width = window.innerWidth;
         this.canvas.height = this.canvas.width / aspect;
-
-        if (this.canvas.getContext)
-        {
-            this.context = this.canvas.getContext('2d');
-            this.imagedata = this.context.createImageData(this.canvas.width, this.canvas.height);
-        }
+        let xRes = this.xRes = this.canvas.width;//core.rayCaster.colCount;
+        let yRes = this.yRes = this.canvas.height;//core.rayCaster.rowCount;
+        console.log(xRes, yRes);
+        //let core = this.core;
+        this.changeScale(1);//core.scale);
+        
+        //OLD
+        //if (this.canvas.getContext)
+        //{
+        this.context   = this.canvas.getContext("2d");
+        this.imagedata = this.context.createImageData(this.canvas.width, this.canvas.height);
+        //this.imageData = this.context.getImageData(0,0,xRes,yRes);
+        //}
 
         this.bufarray = new ArrayBuffer(this.imagedata.width * this.imagedata.height * 4);
         this.buf8     = new Uint8Array (this.bufarray);
         this.buf32    = new Uint32Array(this.bufarray);
         
         this.ymin = new Int32Array(this.canvas.width);
-        
-        
-        //let core = this.core;
-        let xRes = this.xRes = this.canvas.width;//core.rayCaster.colCount;
-        let yRes = this.yRes = this.canvas.height;//core.rayCaster.rowCount;
-        
-        
-        //this.changeScale(1);//core.scale);
-        
-        let context = canvas.getContext("2d");
-        this.context = context;
-        this.imageData = context.getImageData(0,0,xRes,yRes);
     }
-    
 
     OnResizeWindow()
     {        
@@ -99,18 +101,18 @@ export default class Render extends CanvasView
         window.requestAnimationFrame(e => this.Render(e), 0);
     }
     
-    RenderBackground()
-    {
-        let buf32 = this.buf32;
-        let color = this.backgroundcolor|0;
-        for (let i = 0; i < buf32.length; i++) buf32[i] = color|0;
-    }
-
     // Show the back buffer on screen
     Flip()
     {
         this.imagedata.data.set(this.buf8);
         this.context.putImageData(this.imagedata, 0, 0);
+    }
+    
+    RenderBackground()
+    {
+        let buf32 = this.buf32;
+        let color = this.backgroundcolor|0;
+        for (let i = 0; i < buf32.length; i++) buf32[i] = color|0;
     }
     
     RenderTerrain()
