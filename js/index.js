@@ -2,6 +2,7 @@
 
 import Map from './Map.js';
 import Io from './Io.js';
+import Time from './Time.js';
 
 // ---------------------------------------------
 // Viewer information
@@ -73,13 +74,14 @@ var screendata =
 
 var updaterunning = false;
 
-var time = new Date().getTime();
-
-// for fps display
-var timelastframe = new Date().getTime();
+var time = undefined; //new Date().getTime();
+var fpstime = undefined; //new Date().getTime();
 var frames = 0;
 
 var ymin = undefined;// = new Int32Array(screenwidth);
+
+var io = undefined;
+var map_ = undefined;
 
 // ---------------------------------------------
 // The main render routine
@@ -229,21 +231,26 @@ function Render()
 function Draw()
 {
     updaterunning = true;
-    UpdateCamera();
+    time.updateDelta();
+    io.UpdateCamera();
+    
     DrawBackground();
     Render();
     Flip();
-    frames++;
-/*
-    if ((!input.keypressed))
+    
+    //TODO put into a UI view class
+    if (frames >= 120) //every 2 seconds or so in the ideal case
     {
-        updaterunning = false;
-        console.log("nada");
-    } else
-    */
-    {
-        window.requestAnimationFrame(Draw, 0);
+        //TODO cache instead of getElementById each time.
+        document.getElementById('fps').innerText = (frames / fpstime.delta * 1000).toFixed(1) + " fps";
+        
+        fpstime.updateDelta();
+        
+        frames = 0;
     }
+    frames++;
+    
+    window.requestAnimationFrame(Draw, 0);
 }
 
 // ---------------------------------------------
@@ -273,55 +280,6 @@ function OnResizeWindow()
     Draw();
 }
 
-
-// Update the camera for next frame. Dependent on keypresses
-function UpdateCamera()
-{
-    var current = new Date().getTime();
-
-    input.keypressed = false;
-    if (input.leftrightturn != 0)
-    {
-        camera.heading += input.leftrightturn*0.1*(current-time)*0.03;
-        input.keypressed = true;
-    }
-    if (input.leftright != 0)
-    {
-        camera.x += input.leftright * Math.cos(camera.heading) * (current-time)*0.03;
-        camera.y -= input.leftright * Math.sin(camera.heading) * (current-time)*0.03;
-        input.keypressed = true;
-    }
-    if (input.forwardbackward != 0)
-    {
-        camera.x += input.forwardbackward * Math.sin(camera.heading) * (current-time)*0.03;
-        camera.y += input.forwardbackward * Math.cos(camera.heading) * (current-time)*0.03;
-        input.keypressed = true;
-    }
-    if (input.updown != 0)
-    {
-        camera.height += input.updown * (current-time)*0.03;
-        input.keypressed = true;
-    }
-    /*
-    if (input.lookup)
-    {
-        camera.horizon += 2 * (current-time)*0.03;
-        input.keypressed = true;
-    }
-    if (input.lookdown)
-    {
-        camera.horizon -= 2 * (current-time)*0.03;
-        input.keypressed = true;
-    }
-    */
-    /*
-    // Collision detection. Don't fly below the surface.
-    var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
-    if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 0;
-*/
-    time = current;
-}
-
 // ---------------------------------------------
 // Basic screen handling
 
@@ -341,18 +299,14 @@ function Flip()
 
 function Init()
 {
-    let map_ = new Map(map); map_.Load("C1W;D1");
+    time = new Time();
+    fpstime = new Time();
     
-    var io = new Io(input, camera, screendata);
+    map_ = new Map(map); map_.Load("C1W;D1");
     
-    window.onresize = OnResizeWindow; OnResizeWindow();
+    io = new Io(input, camera, screendata, time);
     
-    window.setInterval(function(){
-        var current = new Date().getTime();
-        document.getElementById('fps').innerText = (frames / (current-timelastframe) * 1000).toFixed(1) + " fps";
-        frames = 0;
-        timelastframe = current;
-    }, 2000);
+    window.onresize = OnResizeWindow; OnResizeWindow(); //kicks off rendering.
 }
 
 Init();

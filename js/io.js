@@ -3,7 +3,7 @@ export default class Io
     input = undefined
     camera = undefined
     screendata = undefined
-    time = new Date().getTime();
+    time = undefined
     
     controls =
     {
@@ -18,11 +18,12 @@ export default class Io
         height: undefined,
     }
     
-    constructor(input, camera, screendata)
+    constructor(input, camera, screendata, time)
     {
         this.input = input;
         this.camera = camera;
         this.screendata = screendata;
+        this.time = time;
         
         this.Init();
     }
@@ -80,10 +81,9 @@ export default class Io
         var input = this.input;
         input.forwardbackward = 3.;
         input.mouseposition = this.GetMousePosition(e);
-        time = new Date().getTime();
-
-        if (!updaterunning) Draw();
-        return;
+        //if (!updaterunning) Draw();
+        // return;
+        // 
     }
 
     DetectMouseUp()
@@ -217,4 +217,58 @@ export default class Io
         let camera = this.camera;
         camera.zFar = e.currentTarget.valueAsNumber;
     }
+    
+
+// Update the camera for next frame. Dependent on keypresses
+UpdateCamera()
+{
+    let time = this.time;
+    //var current = new Date().getTime();
+
+    let input = this.input;
+    let camera = this.camera;
+    
+    input.keypressed = false;
+    if (input.leftrightturn != 0)
+    {
+        camera.heading += input.leftrightturn*0.1*(time.delta)*0.03;
+        input.keypressed = true;
+    }
+    if (input.leftright != 0)
+    {
+        camera.x += input.leftright * Math.cos(camera.heading) * (time.delta)*0.03;
+        camera.y -= input.leftright * Math.sin(camera.heading) * (time.delta)*0.03;
+        input.keypressed = true;
+    }
+    if (input.forwardbackward != 0)
+    {
+        camera.x += input.forwardbackward * Math.sin(camera.heading) * (time.delta)*0.03;
+        camera.y += input.forwardbackward * Math.cos(camera.heading) * (time.delta)*0.03;
+        input.keypressed = true;
+    }
+    if (input.updown != 0)
+    {
+        camera.height += input.updown * (time.delta)*0.03;
+        input.keypressed = true;
+    }
+    /*
+    if (input.lookup)
+    {
+        camera.horizon += 2 * (Time.delta)*0.03;
+        input.keypressed = true;
+    }
+    if (input.lookdown)
+    {
+        camera.horizon -= 2 * (Time.delta)*0.03;
+        input.keypressed = true;
+    }
+    */
+    /*
+    // Collision detection. Don't fly below the surface.
+    var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
+    if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 0;
+*/
+    //time = current;
+}
+
 }
