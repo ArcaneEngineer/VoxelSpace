@@ -3,7 +3,18 @@ export default class Render
     camera = undefined
     map = undefined
     io = undefined //maybe move up and out, only used once for updating camera
-    screendata = undefined
+    screendata =
+    {
+        canvas:    null,
+        context:   null,
+        imagedata: null,
+
+        bufarray:  null, // color data
+        buf8:      null, // the same array but with bytes
+        buf32:     null, // the same array but with 32-Bit words
+
+        backgroundcolor: 0xFF00A0F0 //BGR
+    }
     time = undefined
     fpsTime = undefined
     
@@ -11,21 +22,19 @@ export default class Render
     ymin = undefined// = new Int32Array(screenwidth);
     updaterunning = false
     
-    constructor(camera, map, io, screendata, time, fpsTime)
+    constructor(camera, map, io, time, fpsTime)
     {
         this.camera = camera;
         this.map = map;
         this.io = io;
-        this.screendata = screendata;
         this.time = time;
         this.fpsTime = fpsTime;
     }
     
     Render()
     {
-        console.log("R");
         //let result = 2 * Math.atan(camera.yk * 2) * 180. /  Math.PI;
-       // console.log(camera.yk, Math.asin(camera.yk) * 180 / Math.PI);
+        // console.log(camera.yk, Math.asin(camera.yk) * 180 / Math.PI);
         let screendata = this.screendata;
         let mapwidthperiod = this.map.width - 1;
         let mapheightperiod = this.map.height - 1;

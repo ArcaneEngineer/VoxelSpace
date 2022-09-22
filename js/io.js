@@ -1,9 +1,17 @@
 export default class Io
 {
-    input = undefined
+    //input = undefined
     camera = undefined
-    screendata = undefined
     time = undefined
+    
+    forwardbackward= 0
+    leftrightturn  = 0
+    leftright      = 0
+    updown         = 0
+    lookup         = false
+    lookdown       = false
+    mouseposition  = null
+    keypressed     = false
     
     controls =
     {
@@ -18,11 +26,9 @@ export default class Io
         height: undefined,
     }
     
-    constructor(input, camera, screendata, time)
+    constructor(camera, time)
     {
-        this.input = input;
         this.camera = camera;
-        this.screendata = screendata;
         this.time = time;
         
         this.Init();
@@ -78,9 +84,8 @@ export default class Io
 
     DetectMouseDown(e)
     {
-        var input = this.input;
-        input.forwardbackward = 3.;
-        input.mouseposition = this.GetMousePosition(e);
+        this.forwardbackward = 3.;
+        this.mouseposition = this.GetMousePosition(e);
         //if (!updaterunning) Draw();
         // return;
         // 
@@ -88,12 +93,11 @@ export default class Io
 
     DetectMouseUp()
     {
-        var input = this.input;
-        input.mouseposition = null;
-        input.forwardbackward = 0;
-        input.leftrightturn = 0;
-        input.leftright = 0;
-        input.updown = 0;
+        this.mouseposition = null;
+        this.forwardbackward = 0;
+        this.leftrightturn = 0;
+        this.leftright = 0;
+        this.updown = 0;
         return;
     }
 
@@ -101,56 +105,53 @@ export default class Io
     {
         e.preventDefault();
         
-        var input = this.input;
-        if (input.mouseposition == null) return;
-        if (input.forwardbackward == 0) return;
-        if (input.leftright == 0) return;
+        if (this.mouseposition == null) return;
+        if (this.forwardbackward == 0) return;
+        if (this.leftright == 0) return;
 
         var currentMousePosition = GetMousePosition(e);
         var input = this.input;
-        input.leftrightturn = (currentMousePosition[0] - input.mouseposition[0]) / window.innerWidth * 2;
-        //camera.horizon  = 0 + (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 280;
-        //input.updown    = (input.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
+        this.leftrightturn = (currentMousePosition[0] - this.mouseposition[0]) / window.innerWidth * 2;
+        //camera.horizon  = 0 + (this.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 280;
+        //this.updown    = (this.mouseposition[1] - currentMousePosition[1]) / window.innerHeight * 10;
     }
 
 
     DetectKeysDown(e)
     {
-        var input = this.input;
-        
-        let screenwidth = this.screendata.canvas.width|0;
-        let keyTurnRate = 100.;
+        //let screenwidth = this.screendata.canvas.width|0;
+        const keyTurnRate = 0.2;
         switch(e.keyCode)
         {
         case 37:    // left cursor
         case 65:    // a
-            input.leftright = -3.;
+            this.leftright = -3.;
             break;
         case 39:    // right cursor
         case 68:    // d
-            input.leftright = 3.;
+            this.leftright = 3.;
             break;
         case 38:    // cursor up
         case 87:    // w
-            input.forwardbackward = 3.;
+            this.forwardbackward = 3.;
             break;
         case 40:    // cursor down
         case 83:    // s
-            input.forwardbackward = -3.;
+            this.forwardbackward = -3.;
             break;
         case 82:    // r
-            input.updown = +2.;
+            this.updown = +2.;
             break;
         case 70:    // f
-            input.updown = -2.;
+            this.updown = -2.;
             break;
         case 81:    //q
-            //input.lookdown = true;
-            input.leftrightturn = -1. * keyTurnRate / screenwidth;
+            //this.lookdown = true;
+            this.leftrightturn = -1. * keyTurnRate;// / screenwidth;
             break;
         case 69:    // e
-            //input.lookup = true;
-            input.leftrightturn = +1. * keyTurnRate / screenwidth;
+            //this.lookup = true;
+            this.leftrightturn = +1. * keyTurnRate;// / screenwidth;
             break;
          default:
             return;
@@ -166,38 +167,37 @@ export default class Io
 
     DetectKeysUp(e)
     {
-        var input = this.input;
         switch(e.keyCode)
         {
         case 37:    // left cursor
         case 65:    // a
-            input.leftright = 0;
+            this.leftright = 0;
             break;
         case 39:    // right cursor
         case 68:    // d
-            input.leftright = 0;
+            this.leftright = 0;
             break;
         case 38:    // cursor up
         case 87:    // w
-            input.forwardbackward = 0;
+            this.forwardbackward = 0;
             break;
         case 40:    // cursor down
         case 83:    // s
-            input.forwardbackward = 0;
+            this.forwardbackward = 0;
             break;
         case 82:    // r
-            input.updown = 0;
+            this.updown = 0;
             break;
         case 70:    // f
-            input.updown = 0;
+            this.updown = 0;
             break;
         case 81:    //q
-            input.leftrightturn = 0;
-            //input.lookdown = false;
+            this.leftrightturn = 0;
+            //this.lookdown = false;
             break;
         case 69:    // e
-            input.leftrightturn = 0;
-            //input.lookup = false;
+            this.leftrightturn = 0;
+            //this.lookup = false;
             break;
         
         default:
@@ -228,39 +228,39 @@ UpdateCamera()
     let input = this.input;
     let camera = this.camera;
     
-    input.keypressed = false;
-    if (input.leftrightturn != 0)
+    this.keypressed = false;
+    if (this.leftrightturn != 0)
     {
-        camera.heading += input.leftrightturn*0.1*(time.delta)*0.03;
-        input.keypressed = true;
+        camera.heading += this.leftrightturn*0.1*(time.delta)*0.03;
+        this.keypressed = true;
     }
-    if (input.leftright != 0)
+    if (this.leftright != 0)
     {
-        camera.x += input.leftright * Math.cos(camera.heading) * (time.delta)*0.03;
-        camera.y -= input.leftright * Math.sin(camera.heading) * (time.delta)*0.03;
-        input.keypressed = true;
+        camera.x += this.leftright * Math.cos(camera.heading) * (time.delta)*0.03;
+        camera.y -= this.leftright * Math.sin(camera.heading) * (time.delta)*0.03;
+        this.keypressed = true;
     }
-    if (input.forwardbackward != 0)
+    if (this.forwardbackward != 0)
     {
-        camera.x += input.forwardbackward * Math.sin(camera.heading) * (time.delta)*0.03;
-        camera.y += input.forwardbackward * Math.cos(camera.heading) * (time.delta)*0.03;
-        input.keypressed = true;
+        camera.x += this.forwardbackward * Math.sin(camera.heading) * (time.delta)*0.03;
+        camera.y += this.forwardbackward * Math.cos(camera.heading) * (time.delta)*0.03;
+        this.keypressed = true;
     }
-    if (input.updown != 0)
+    if (this.updown != 0)
     {
-        camera.height += input.updown * (time.delta)*0.03;
-        input.keypressed = true;
+        camera.height += this.updown * (time.delta)*0.03;
+        this.keypressed = true;
     }
     /*
-    if (input.lookup)
+    if (this.lookup)
     {
         camera.horizon += 2 * (Time.delta)*0.03;
-        input.keypressed = true;
+        this.keypressed = true;
     }
-    if (input.lookdown)
+    if (this.lookdown)
     {
         camera.horizon -= 2 * (Time.delta)*0.03;
-        input.keypressed = true;
+        this.keypressed = true;
     }
     */
     /*
