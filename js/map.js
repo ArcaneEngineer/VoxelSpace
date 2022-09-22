@@ -6,6 +6,18 @@ export default class Map
     constructor(map)
     {
         this.map = map;
+        
+        this.Init();
+    }
+    
+    Init()
+    {
+        let map = this.map;
+        for (let i = 0; i < map.width * map.height; i++)
+        {
+            map.color[i] = 0xFF007050;
+            map.altitude[i] = 0;
+        }
     }
     
     DownloadImagesAsync(urls)
@@ -39,7 +51,7 @@ export default class Map
         });
     }
 
-    LoadMap(filenames)
+    Load(filenames)
     {
         var files = filenames.split(";");
         this.DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(result => this.OnLoadedImages(result) );

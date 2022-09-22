@@ -75,12 +75,11 @@ var updaterunning = false;
 
 var time = new Date().getTime();
 
-
 // for fps display
 var timelastframe = new Date().getTime();
 var frames = 0;
 
-var ymin;// = new Int32Array(screenwidth);
+var ymin = undefined;// = new Int32Array(screenwidth);
 
 // ---------------------------------------------
 // The main render routine
@@ -250,7 +249,6 @@ function Draw()
 // ---------------------------------------------
 // Init routines
 
-
 function OnResizeWindow()
 {
     screendata.canvas = document.getElementById('fullscreenCanvas');
@@ -341,118 +339,20 @@ function Flip()
     screendata.context.putImageData(screendata.imagedata, 0, 0);
 }
 
-var tiltData =
-{
-    pitchAngle: 0
-};
-
 function Init()
 {
-/*
-    //tilt
-    for (let i = 0; i < 360; i++)
-    {
-    tiltData.pitchAngle = i * Math.PI / 180.;
+    let map_ = new Map(map); map_.Load("C1W;D1");
     
-    let rad = 1.0;
-    let tz = rad * Math.cos(tiltData.pitchAngle);
-    let ty = rad * Math.sin(tiltData.pitchAngle);
-    console.log();
-    let ey = 2.0;
-    let yk = 1.0;
-    let yc = 280.;
-    let ys = (ty - ey) * yk / tz + yc; 
-    console.log('pitch='+tiltData.pitchAngle+' tz='+tz+' ty='+ty+' ys='+ys);
-    }
-    */
-
-
-    /*
-    let steps = 0;
-    let deltaz = 1.;
-    let deltaincr = 0.01;
-    for (let z = 1; z < camera.zFar; z += deltaz) //for each ray step
-    {
-        deltaz += deltaincr;
-        steps++
-    }
-    console.log("total steps zNear="," to zFar=", camera.zFar, "with delta incr", deltaincr, "is", steps, "with final deltaz", deltaz);
-    */
-    console.log(map);
-    var map_ = new Map(map);
-    for(var i=0; i<map.width*map.height; i++)
-    {
-        map.color[i] = 0xFF007050;
-        map.altitude[i] = 0;
-    }
-    map_.LoadMap("C1W;D1");
+    var io = new Io(input, camera, screendata);
     
-    OnResizeWindow();
-
-
+    window.onresize = OnResizeWindow; OnResizeWindow();
     
-    InitControls();
-    
-    window.onresize       = OnResizeWindow;
-
     window.setInterval(function(){
         var current = new Date().getTime();
         document.getElementById('fps').innerText = (frames / (current-timelastframe) * 1000).toFixed(1) + " fps";
         frames = 0;
         timelastframe = current;
     }, 2000);
- console.log("INIT2");
 }
-
-var controls =
-{
-    zNear: undefined,
-    zFar: undefined,
-    horizon: undefined,
-    columnscale: undefined,
-    hFov: undefined,
-    vFov: undefined,
-    que: undefined,
-    heading: undefined,
-    height: undefined,
-}
-
-
-function InitControls()
-{
-    
-    var io = new Io(input, camera, screendata);
-    
-    // set event handlers for keyboard, mouse, touchscreen and window resize
-    let canvas = document.getElementById("fullscreenCanvas");
-    window.onkeydown    = e => io.DetectKeysDown(e);
-    window.onkeyup      = e => io.DetectKeysUp(e);
-    canvas.onmousedown  = e => io.DetectMouseDown(e);
-    canvas.onmouseup    = e => io.DetectMouseUp(e);
-    canvas.onmousemove  = e => io.DetectMouseMove(e);
-    canvas.ontouchstart = e => io.DetectMouseDown(e);
-    canvas.ontouchend   = e => io.DetectMouseUp(e);
-    canvas.ontouchmove  = e => io.DetectMouseMove(e);
-    
-    controls.zNear             = document.getElementById("zNear");
-    controls.zFar              = document.getElementById("zFar");
-    controls.horizon           = document.getElementById("horizon");
-    controls.columnscale       = document.getElementById("columnscale");
-    controls.hFov              = document.getElementById("hFov");
-    controls.vFov              = document.getElementById("vFov");
-    controls.heading           = document.getElementById("heading");
-    controls.height            = document.getElementById("height");
-    
-    controls.zNear.oninput = e => io.onzNearChanged(e);
-    controls.zFar .oninput = e => io.onzFarChanged(e);
-    //controls.zFar .addEventListener("input", onzFarChanged);
-    
-    //let canvas = this.canvas = document.getElementById("voxels");
-    //this.fovGroup            = document.getElementById("fovGroup");
-    //this.fovArc              = document.getElementById("fovArc");
-    //let svg = this.svg       = document.getElementById("topVectors");
-}
-
-
 
 Init();

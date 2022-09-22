@@ -5,11 +5,59 @@ export default class Io
     screendata = undefined
     time = new Date().getTime();
     
+    controls =
+    {
+        zNear: undefined,
+        zFar: undefined,
+        horizon: undefined,
+        columnscale: undefined,
+        hFov: undefined,
+        vFov: undefined,
+        que: undefined,
+        heading: undefined,
+        height: undefined,
+    }
+    
     constructor(input, camera, screendata)
     {
         this.input = input;
         this.camera = camera;
         this.screendata = screendata;
+        
+        this.Init();
+    }
+    
+    Init()
+    {
+        let controls = this.controls;
+        // set event handlers for keyboard, mouse, touchscreen and window resize
+        let canvas = document.getElementById("fullscreenCanvas");
+        window.onkeydown    = e => this.DetectKeysDown(e);
+        window.onkeyup      = e => this.DetectKeysUp(e);
+        canvas.onmousedown  = e => this.DetectMouseDown(e);
+        canvas.onmouseup    = e => this.DetectMouseUp(e);
+        canvas.onmousemove  = e => this.DetectMouseMove(e);
+        canvas.ontouchstart = e => this.DetectMouseDown(e);
+        canvas.ontouchend   = e => this.DetectMouseUp(e);
+        canvas.ontouchmove  = e => this.DetectMouseMove(e);
+        
+        controls.zNear             = document.getElementById("zNear");
+        controls.zFar              = document.getElementById("zFar");
+        controls.horizon           = document.getElementById("horizon");
+        controls.columnscale       = document.getElementById("columnscale");
+        controls.hFov              = document.getElementById("hFov");
+        controls.vFov              = document.getElementById("vFov");
+        controls.heading           = document.getElementById("heading");
+        controls.height            = document.getElementById("height");
+        
+        controls.zNear.oninput = e => this.onzNearChanged(e);
+        controls.zFar .oninput = e => this.onzFarChanged(e);
+        //controls.zFar .addEventListener("input", onzFarChanged);
+        
+        //let canvas = this.canvas = document.getElementById("voxels");
+        //this.fovGroup            = document.getElementById("fovGroup");
+        //this.fovArc              = document.getElementById("fovArc");
+        //let svg = this.svg       = document.getElementById("topVectors");
     }
     
     // ---------------------------------------------
