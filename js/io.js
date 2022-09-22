@@ -1,12 +1,14 @@
 export default class Io
 {
     input = undefined
+    camera = undefined
     screendata = undefined
     time = new Date().getTime();
     
-    constructor(input, screendata)
+    constructor(input, camera, screendata)
     {
         this.input = input;
+        this.camera = camera;
         this.screendata = screendata;
     }
     
@@ -155,5 +157,16 @@ export default class Io
             break;
         }
         return false;
+    }
+    
+    onzNearChanged(e)
+    {
+        let camera = this.camera;
+        camera.zNear = e.currentTarget.valueAsNumber;
+    }
+    onzFarChanged(e)
+    {
+        let camera = this.camera;
+        camera.zFar = e.currentTarget.valueAsNumber;
     }
 }

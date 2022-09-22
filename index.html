@@ -76,33 +76,23 @@
 <option value="C29W;D16">Map C29W</option>
 </select>
 
-<label for="zNear">zNear</label>
-<input id="zNear" type="range" min="1" max="1000" step="1" oninput="camera.zNear = valueAsNumber">
+<label for="zNear">zNear</label><input id="zNear" type="range" min="1" max="1000" step="1">
 
-<label for="zFar">zFar</label>
-<input id="zFar" type="range" min="100" max="10000" step="1" oninput="camera.zFar = valueAsNumber">
+<label for="zFar">zFar</label><input id="zFar" type="range" min="100" max="10000" step="1">
 
-<label for="horizon">horizon pos</label>
-<input id="horizon" type="range" min="0" max="560" step="1" oninput="camera.horizon = valueAsNumber">
+<label for="horizon">horizon pos</label><input id="horizon" type="range" min="0" max="560" step="1">
 
-<label for="columnscale">columnscale</label>
-<input id="columnscale" type="range" min="1" max="10" step="0.01" oninput="camera.columnscale = valueAsNumber">
+<label for="columnscale">columnscale</label><input id="columnscale" type="range" min="1" max="10" step="0.01">
 
+<label for="hFov">hfov</label><input id="hFov" type="range" min="0" max="3.141" step="0.01">
 
-<label for="hfov">hfov</label>
-<input id="hfov" type="range" min="0" max="3.141" step="0.01" oninput="camera.hfov = valueAsNumber">
+<label for="vFov">vfov</label><input id="vFov" type="range" min="0.000001" max="1.0" step="0.000001">
 
-<label for="vfov">vfov</label>
-<input id="vfov" type="range" min="0.000001" max="1.0" step="0.000001" oninput="camera.setvfov(valueAsNumber)">
+<label for="que">que</label><input id="que" type="range" min="0.0" max="2.0" step="0.000001">
 
-<label for="que">que</label>
-<input id="que" type="range" min="0.0" max="2.0" step="0.000001" oninput="camera.que = valueAsNumber">
+<label for="heading">heading</label><input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001">
 
-<label for="heading">heading</label>
-<input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001" oninput="camera.angle  = valueAsNumber">
-
-<label for="height">height</label>
-<input id="height" type="range" min="0" max="100" step="1" oninput="camera.height = valueAsNumber">
+<label for="height">height</label><input id="height" type="range" min="0" max="100" step="1">
 
 
 </div>
