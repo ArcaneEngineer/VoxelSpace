@@ -1,28 +1,28 @@
 // Util class for downloading the png
 export default class Map
 {
-    map = undefined
+    width    = 1024
+    height   = 1024
+    shift    = 10  // power of two: 2^10 = 1024
+    altitude = new Uint8Array (1024*1024) // 1024 * 1024 byte array: heights
+    color    = new Uint32Array(1024*1024) // 1024 * 1024 int array: RGB colors
     
-    constructor(map)
+    constructor()
     {
-        this.map = map;
-        
         this.Init();
     }
     
     Init()
     {
-        let map = this.map;
-        for (let i = 0; i < map.width * map.height; i++)
+        for (let i = 0; i < this.width * this.height; i++)
         {
-            map.color[i] = 0xFF007050;
-            map.altitude[i] = 0;
+            this.color[i] = 0xFF007050;
+            this.altitude[i] = 0;
         }
     }
     
     DownloadImagesAsync(urls)
     {
-        let map = this.map;
         return new Promise(function(resolve, reject)
         {
             var pending = urls.length;
@@ -37,10 +37,10 @@ export default class Map
                 image.onload = function() {
                     var tempcanvas = document.createElement("canvas");
                     var tempcontext = tempcanvas.getContext("2d");
-                    tempcanvas.width = map.width;
-                    tempcanvas.height = map.height;
-                    tempcontext.drawImage(image, 0, 0, map.width, map.height);
-                    result[i] = tempcontext.getImageData(0, 0, map.width, map.height).data;
+                    tempcanvas.width = this.width;
+                    tempcanvas.height = this.height;
+                    tempcontext.drawImage(image, 0, 0, this.width, this.height);
+                    result[i] = tempcontext.getImageData(0, 0, this.width, this.height).data;
                     pending--;
                     if (pending === 0) {
                         resolve(result);
@@ -61,13 +61,12 @@ export default class Map
     {
         // console.log(this);
         // console.log(result);
-        var map = this.map;
         var datac = result[0];
         var datah = result[1];
-        for(var i=0; i<this.map.width*this.map.height; i++)
+        for(var i=0; i<this.width*this.height; i++)
         {
-            map.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
-            map.altitude[i] = datah[i<<2];
+            this.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
+            this.altitude[i] = datah[i<<2];
         }
         //Draw();
     }

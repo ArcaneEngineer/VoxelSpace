@@ -41,18 +41,6 @@ var camera =
 };
 
 // ---------------------------------------------
-// Landscape data
-
-var map =
-{
-    width:    1024,
-    height:   1024,
-    shift:    10,  // power of two: 2^10 = 1024
-    altitude: new Uint8Array(1024*1024), // 1024 * 1024 byte array with height information
-    color:    new Uint32Array(1024*1024) // 1024 * 1024 int array with RGB colors
-};
-
-// ---------------------------------------------
 // Screen data
 
 var screendata =
@@ -81,7 +69,7 @@ var frames = 0;
 var ymin = undefined;// = new Int32Array(screenwidth);
 
 var io = undefined;
-var map_ = undefined;
+var map = undefined;
 
 // ---------------------------------------------
 // The main render routine
@@ -301,9 +289,7 @@ function Init()
 {
     time = new Time();
     fpstime = new Time();
-    
-    map_ = new Map(map); map_.Load("C1W;D1");
-    
+    map = new Map(); map.Load("C1W;D1");
     io = new Io(input, camera, screendata, time);
     
     window.onresize = OnResizeWindow; OnResizeWindow(); //kicks off rendering.
