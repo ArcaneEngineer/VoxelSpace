@@ -1,4 +1,7 @@
-"use strict";
+//"use strict";
+
+import Map from './Map.js';
+import Io from './Io.js';
 
 // ---------------------------------------------
 // Viewer information
@@ -375,25 +378,28 @@ function Init()
     }
     console.log("total steps zNear="," to zFar=", camera.zFar, "with delta incr", deltaincr, "is", steps, "with final deltaz", deltaz);
     */
-    
+    console.log(map);
+    var map_ = new Map(map);
     for(var i=0; i<map.width*map.height; i++)
     {
         map.color[i] = 0xFF007050;
         map.altitude[i] = 0;
     }
-    LoadMap("C1W;D1");
+    map_.LoadMap("C1W;D1");
+    
+    var io = new Io(input, screendata);
     OnResizeWindow();
 
     // set event handlers for keyboard, mouse, touchscreen and window resize
     var canvas = document.getElementById("fullscreenCanvas");
-    window.onkeydown    = DetectKeysDown;
-    window.onkeyup      = DetectKeysUp;
-    canvas.onmousedown  = DetectMouseDown;
-    canvas.onmouseup    = DetectMouseUp;
-    canvas.onmousemove  = DetectMouseMove;
-    canvas.ontouchstart = DetectMouseDown;
-    canvas.ontouchend   = DetectMouseUp;
-    canvas.ontouchmove  = DetectMouseMove;
+    window.onkeydown    = e => io.DetectKeysDown(e);
+    window.onkeyup      = e => io.DetectKeysUp(e);
+    canvas.onmousedown  = e => io.DetectMouseDown(e);
+    canvas.onmouseup    = e => io.DetectMouseUp(e);
+    canvas.onmousemove  = e => io.DetectMouseMove(e);
+    canvas.ontouchstart = e => io.DetectMouseDown(e);
+    canvas.ontouchend   = e => io.DetectMouseUp(e);
+    canvas.ontouchmove  = e => io.DetectMouseMove(e);
 
     window.onresize       = OnResizeWindow;
 
@@ -403,7 +409,7 @@ function Init()
         frames = 0;
         timelastframe = current;
     }, 2000);
-
+ console.log("INIT2");
 }
 
 Init();
