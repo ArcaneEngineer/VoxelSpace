@@ -26,19 +26,19 @@ export default class Io
         height: undefined,
     }
     
-    constructor(camera, time)
+    constructor(camera, time, elementName)
     {
         this.camera = camera;
         this.time = time;
         
-        this.Init();
+        this.Init(elementName);
     }
     
-    Init()
+    Init(elementName)
     {
         let controls = this.controls;
         // set event handlers for keyboard, mouse, touchscreen and window resize
-        let canvas = document.getElementById("fullscreenCanvas");
+        let canvas = document.getElementById(elementName);
         window.onkeydown    = e => this.DetectKeysDown(e);
         window.onkeyup      = e => this.DetectKeysUp(e);
         canvas.onmousedown  = e => this.DetectMouseDown(e);

@@ -35,7 +35,8 @@ export default class Render extends CanvasView
     {
         let aspect = window.innerWidth / window.innerHeight;
         
-        this.canvas = document.getElementById('fullscreenCanvas');
+        let canvas = this.canvas = document.getElementById(this.elementName);
+        
         this.canvas.width = window.innerWidth<800?window.innerWidth:800;
         this.canvas.height = this.canvas.width / aspect;
 
@@ -56,7 +57,6 @@ export default class Render extends CanvasView
         let xRes = this.xRes = this.canvas.width;//core.rayCaster.colCount;
         let yRes = this.yRes = this.canvas.height;//core.rayCaster.rowCount;
         
-        let canvas = this.canvas = document.getElementById(this.elementName);
         
         //this.changeScale(1);//core.scale);
         
