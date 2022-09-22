@@ -1,56 +1,138 @@
-export default class Render
+import CanvasView from './CanvasView.js';
+
+export default class Render extends CanvasView
 {
-    camera = undefined
-    map = undefined
-    io = undefined //maybe move up and out, only used once for updating camera
-    screendata =
-    {
-        canvas:    null,
-        context:   null,
-        imagedata: null,
-
-        bufarray:  null, // color data
-        buf8:      null, // the same array but with bytes
-        buf32:     null, // the same array but with 32-Bit words
-
-        backgroundcolor: 0xFF00A0F0 //BGR
-    }
+    camera    = undefined
+    map       = undefined
+    io        = undefined //maybe move up and out, only used once for updating camera
+    
+    bufarray  = undefined // color data
+    buf8      = undefined // the same array but with bytes
+    buf32     = undefined // the same array but with 32-Bit words
+    
     time = undefined
     fpsTime = undefined
     
     frames = 0
     ymin = undefined// = new Int32Array(screenwidth);
     updaterunning = false
+    backgroundcolor = 0xFF00A0F0 //BGR
     
-    constructor(camera, map, io, time, fpsTime)
+    constructor(camera, map, io, time, fpsTime, elementName)
     {
+        super(undefined);
+        
         this.camera = camera;
         this.map = map;
         this.io = io;
         this.time = time;
         this.fpsTime = fpsTime;
+        
+        this.elementName = elementName;
+    }
+    
+    initUI()
+    {
+        let aspect = window.innerWidth / window.innerHeight;
+        
+        this.canvas = document.getElementById('fullscreenCanvas');
+        this.canvas.width = window.innerWidth<800?window.innerWidth:800;
+        this.canvas.height = this.canvas.width / aspect;
+
+        if (this.canvas.getContext)
+        {
+            this.context = this.canvas.getContext('2d');
+            this.imagedata = this.context.createImageData(this.canvas.width, this.canvas.height);
+        }
+
+        this.bufarray = new ArrayBuffer(this.imagedata.width * this.imagedata.height * 4);
+        this.buf8     = new Uint8Array (this.bufarray);
+        this.buf32    = new Uint32Array(this.bufarray);
+        
+        this.ymin = new Int32Array(this.canvas.width);
+        
+        
+        //let core = this.core;
+        let xRes = this.xRes = this.canvas.width;//core.rayCaster.colCount;
+        let yRes = this.yRes = this.canvas.height;//core.rayCaster.rowCount;
+        
+        let canvas = this.canvas = document.getElementById(this.elementName);
+        
+        //this.changeScale(1);//core.scale);
+        
+        let context = canvas.getContext("2d");
+        this.context = context;
+        this.imageData = context.getImageData(0,0,xRes,yRes);
+    }
+    
+
+    OnResizeWindow()
+    {        
+        this.initUI(this.elementName);
+        
+        this.Render();
     }
     
     Render()
     {
+        this.updaterunning = true;
+        //console.log(this);
+        this.time.updateDelta();
+        this.io.UpdateCamera();
+        
+        this.RenderBackground();
+        this.RenderTerrain();
+        this.Flip();
+        
+        //TODO put into a UI view class
+        if (this.frames >= 120) //every 2 seconds or so in the ideal case
+        {
+            //TODO cache instead of getElementById each time.
+            document.getElementById('fps').innerText = (this.frames / this.fpsTime.delta * 1000).toFixed(1) + " fps";
+            
+            this.fpsTime.updateDelta();
+            
+            this.frames = 0;
+        }
+        this.frames++;
+        
+        window.requestAnimationFrame(e => this.Render(e), 0);
+    }
+    
+    RenderBackground()
+    {
+        let buf32 = this.buf32;
+        let color = this.backgroundcolor|0;
+        for (let i = 0; i < buf32.length; i++) buf32[i] = color|0;
+    }
+
+    // Show the back buffer on screen
+    Flip()
+    {
+        this.imagedata.data.set(this.buf8);
+        this.context.putImageData(this.imagedata, 0, 0);
+    }
+    
+    RenderTerrain()
+    {
         //let result = 2 * Math.atan(camera.yk * 2) * 180. /  Math.PI;
         // console.log(camera.yk, Math.asin(camera.yk) * 180 / Math.PI);
-        let screendata = this.screendata;
+        
         let mapwidthperiod = this.map.width - 1;
         let mapheightperiod = this.map.height - 1;
 
-        let screenwidth = screendata.canvas.width|0;
+        let screenwidth = this.canvas.width|0;
         //let sinang = Math.sin(camera.angle);
         //let cosang = Math.cos(camera.angle);
         
         //TODO what if screen width changes?
         for (let x = 0; x < screenwidth; x++)
-            this.ymin[x] = screendata.canvas.height; //TODO OPTIMISE
+            this.ymin[x] = this.canvas.height; //TODO OPTIMISE
 
         let deltaz = 1.;
-        let buf32 = screendata.buf32;
+        let buf32 = this.buf32;
         
-        // Draw from front to back
+        // Render from front to back
         let camera = this.camera;
         let zNear = camera.zNear;
         let zFar  = camera.zFar;
@@ -170,80 +252,5 @@ export default class Render
             //as in a sliced CT-scan style view (but perspective, not ortho).
             deltaz += 0.01; //OPTIMISE increments further away to be greater.
         }
-    }
-
-
-    // ---------------------------------------------
-    // Draw the next frame
-
-    Draw()
-    {
-        this.updaterunning = true;
-        //console.log(this);
-        this.time.updateDelta();
-        this.io.UpdateCamera();
-        
-        this.DrawBackground();
-        this.Render();
-        this.Flip();
-        
-        //TODO put into a UI view class
-        if (this.frames >= 120) //every 2 seconds or so in the ideal case
-        {
-            //TODO cache instead of getElementById each time.
-            document.getElementById('fps').innerText = (this.frames / this.fpsTime.delta * 1000).toFixed(1) + " fps";
-            
-            this.fpsTime.updateDelta();
-            
-            this.frames = 0;
-        }
-        this.frames++;
-        
-        window.requestAnimationFrame(e => this.Draw(e), 0);
-    }
-
-    // ---------------------------------------------
-    // Init routines
-
-    OnResizeWindow()
-    {
-        let screendata = this.screendata;
-        let aspect = window.innerWidth / window.innerHeight;
-        
-        screendata.canvas = document.getElementById('fullscreenCanvas');
-        screendata.canvas.width = window.innerWidth<800?window.innerWidth:800;
-        screendata.canvas.height = screendata.canvas.width / aspect;
-
-        if (screendata.canvas.getContext)
-        {
-            screendata.context = screendata.canvas.getContext('2d');
-            screendata.imagedata = screendata.context.createImageData(screendata.canvas.width, screendata.canvas.height);
-        }
-
-        screendata.bufarray = new ArrayBuffer(screendata.imagedata.width * screendata.imagedata.height * 4);
-        screendata.buf8     = new Uint8Array(screendata.bufarray);
-        screendata.buf32    = new Uint32Array(screendata.bufarray);
-        
-        this.ymin = new Int32Array(screendata.canvas.width);
-        
-        this.Draw();
-    }
-
-    // ---------------------------------------------
-    // Basic screen handling
-
-    DrawBackground()
-    {
-        let buf32 = this.screendata.buf32;
-        let color = this.screendata.backgroundcolor|0;
-        for (let i = 0; i < buf32.length; i++) buf32[i] = color|0;
-    }
-
-    // Show the back buffer on screen
-    Flip()
-    {
-        let screendata = this.screendata;
-        screendata.imagedata.data.set(screendata.buf8);
-        screendata.context.putImageData(screendata.imagedata, 0, 0);
     }
 }

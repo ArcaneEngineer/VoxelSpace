@@ -23,7 +23,7 @@ function Init()
     map = new Map(); map.Load("C1W;D1");
     camera = new Camera();
     io = new Io(camera, time);
-    render = new Render(camera, map, io, time, fpsTime);
+    render = new Render(camera, map, io, time, fpsTime, "fullscreenCanvas");
     window.onresize = e => render.OnResizeWindow(e); render.OnResizeWindow(); //kicks off rendering.
 }
 
