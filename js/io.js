@@ -57,8 +57,10 @@ export default class Io
         controls.heading           = document.getElementById("heading");
         controls.height            = document.getElementById("height");
         
-        controls.zNear.oninput = e => this.onzNearChanged(e);
-        controls.zFar .oninput = e => this.onzFarChanged(e);
+        controls.zNear.oninput = e => this.onChangezNear(e);
+        controls.zFar .oninput = e => this.onChangezFar(e);
+        controls.height.oninput = e => this.onChangeHeight(e);
+        controls.hFov.oninput = e => this.onChangehFov(e);
         //controls.zFar .addEventListener("input", onzFarChanged);
         
         //let canvas = this.canvas = document.getElementById("voxels");
@@ -207,68 +209,80 @@ export default class Io
         return false;
     }
     
-    onzNearChanged(e)
+    onChangezNear(e)
     {
         let camera = this.camera;
         camera.zNear = e.currentTarget.valueAsNumber;
     }
-    onzFarChanged(e)
+    onChangezFar(e)
     {
         let camera = this.camera;
         camera.zFar = e.currentTarget.valueAsNumber;
     }
     
-
-// Update the camera for next frame. Dependent on keypresses
-UpdateCamera()
-{
-    let time = this.time;
-    //var current = new Date().getTime();
-
-    let input = this.input;
-    let camera = this.camera;
+    onChangeHeight(e)
+    {
+        let camera = this.camera;
+        camera.height = e.currentTarget.valueAsNumber;
+    }
     
-    this.keypressed = false;
-    if (this.leftrightturn != 0)
+    onChangehFov(e)
     {
-        camera.heading += this.leftrightturn*0.1*(time.delta)*0.03;
-        this.keypressed = true;
+        let camera = this.camera;
+        camera.hFov = e.currentTarget.valueAsNumber;
     }
-    if (this.leftright != 0)
+    
+    
+    // Update the camera for next frame. Dependent on keypresses
+    UpdateCamera()
     {
-        camera.x += this.leftright * Math.cos(camera.heading) * (time.delta)*0.03;
-        camera.y -= this.leftright * Math.sin(camera.heading) * (time.delta)*0.03;
-        this.keypressed = true;
-    }
-    if (this.forwardbackward != 0)
-    {
-        camera.x += this.forwardbackward * Math.sin(camera.heading) * (time.delta)*0.03;
-        camera.y += this.forwardbackward * Math.cos(camera.heading) * (time.delta)*0.03;
-        this.keypressed = true;
-    }
-    if (this.updown != 0)
-    {
-        camera.height += this.updown * (time.delta)*0.03;
-        this.keypressed = true;
-    }
-    /*
-    if (this.lookup)
-    {
-        camera.horizon += 2 * (Time.delta)*0.03;
-        this.keypressed = true;
-    }
-    if (this.lookdown)
-    {
-        camera.horizon -= 2 * (Time.delta)*0.03;
-        this.keypressed = true;
-    }
+        let time = this.time;
+        //var current = new Date().getTime();
+
+        let input = this.input;
+        let camera = this.camera;
+        
+        this.keypressed = false;
+        if (this.leftrightturn != 0)
+        {
+            camera.heading += this.leftrightturn*0.1*(time.delta)*0.03;
+            this.keypressed = true;
+        }
+        if (this.leftright != 0)
+        {
+            camera.x += this.leftright * Math.cos(camera.heading) * (time.delta)*0.03;
+            camera.y -= this.leftright * Math.sin(camera.heading) * (time.delta)*0.03;
+            this.keypressed = true;
+        }
+        if (this.forwardbackward != 0)
+        {
+            camera.x += this.forwardbackward * Math.sin(camera.heading) * (time.delta)*0.03;
+            camera.y += this.forwardbackward * Math.cos(camera.heading) * (time.delta)*0.03;
+            this.keypressed = true;
+        }
+        if (this.updown != 0)
+        {
+            camera.height += this.updown * (time.delta)*0.03;
+            this.keypressed = true;
+        }
+        /*
+        if (this.lookup)
+        {
+            camera.horizon += 2 * (Time.delta)*0.03;
+            this.keypressed = true;
+        }
+        if (this.lookdown)
+        {
+            camera.horizon -= 2 * (Time.delta)*0.03;
+            this.keypressed = true;
+        }
+        */
+        /*
+        // Collision detection. Don't fly below the surface.
+        var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
+        if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 0;
     */
-    /*
-    // Collision detection. Don't fly below the surface.
-    var mapoffset = ((Math.floor(camera.y) & (map.width-1)) << map.shift) + (Math.floor(camera.x) & (map.height-1))|0;
-    if ((map.altitude[mapoffset]+10) > camera.height) camera.height = map.altitude[mapoffset] + 0;
-*/
-    //time = current;
-}
+        //time = current;
+    }
 
 }

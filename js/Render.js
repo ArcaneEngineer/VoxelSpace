@@ -160,6 +160,10 @@ export default class Render extends CanvasView
         let rx = Math.sin(heading+hhFov);
         let ry = Math.cos(heading+hhFov);
         
+        //et fovIsNonZero = 0// hFov == 0 ? 0 : 1;
+        let fovIsNonZero = hFov == 0 ? 0 : 1;
+        console.log(camera.hFov, fovIsNonZero);
+        //console.log();
         for (let z = zNear; z < zFar; z += deltaz) //for each ray step
         {
             //get float world space map coords we sample at L,R edges of screen,
@@ -168,11 +172,18 @@ export default class Render extends CanvasView
             //without *z, this describes unit circle. 
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
-            
-            let maplxo =  lx * z; //-cosang * z - sinang * z;
-            let maplyo =  ly * z; // sinang * z - cosang * z;
-            let maprxo =  rx * z; // cosang * z - sinang * z;
-            let mapryo =  ry * z; //-sinang * z - cosang * z;
+            //let zz = z; //PERSPECTIVE
+            //let zz = (z > zNear ? 1 : z); //ORTHO
+            let zz = fovIsNonZero ? z  //PERSPECTIVE 
+                                  :(z > zNear ? 1 : z); //ORTHO
+            //let ww = screenwidth; //PERSPECTIVE
+            //let ww = 1; //ORTHO
+            let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
+                                  : 1; //ORTHO
+            let maplxo =  lx * zz; //-cosang * z - sinang * z;
+            let maplyo =  ly * zz; // sinang * z - cosang * z;
+            let maprxo =  rx * zz; // cosang * z - sinang * z;
+            let mapryo =  ry * zz; //-sinang * z - cosang * z;
             
             //let maplxo =  -cosang * z - sinang * z;
             //let maplyo =   sinang * z - cosang * z;
@@ -183,29 +194,22 @@ export default class Render extends CanvasView
             //world map x,y change as we advance along this ray; derived from 
             //accelerating z as we move farther along the ray, hence in z loop.
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-            let dx = (maprxo - maplxo) / screenwidth;
-            let dy = (mapryo - maplyo) / screenwidth;
+            let dx = (maprxo - maplxo) / ww;// / screenwidth;
+            let dy = (mapryo - maplyo) / ww;// / screenwidth;
             //console.log("d=", dx, dy);
             
             //world map coordinates (float)
-            let maplx = maplxo + camx;
-            let maply = maplyo + camy;
-            let maprx = maprxo + camx;
-            let mapry = mapryo + camy;
-            /*
-            if (z > 900 && z < 1004) 
-            {
-                //console.log(maplx, maply, " | ", maprx, mapry); 
-                let lmx = Math.floor(maplx) & mapwidthperiod;
-                let lmy = Math.floor(maply) & mapwidthperiod;
-                let rmx = Math.floor(maprx) & mapwidthperiod;
-                let rmy = Math.floor(mapry) & mapwidthperiod;
-                console.log(lmx, lmy, rmx, rmy);
-            }
-            */
+            let maplx = lx * z + camx;
+            let maply = ly * z + camy;
+            let maprx = rx * z + camx;
+            let mapry = ry * z + camy;
 
             //div-by-z causes rays to diverge vertically (no angles stored).
-            let invz = yk * 800. / z;//Math.pow(z, camera.que);
+            let invzz = fovIsNonZero ? 800. / z //PERSPECTIVE
+                                     : 1; //ORTHO
+            //let invzz = 800. / z; //PERSPECTIVE
+            //let invzz = 1; //ORTHO
+            let invz = yk * invzz;//Math.pow(z, camera.que);
             
             let xStart = 0;
             let xEnd = screenwidth;
