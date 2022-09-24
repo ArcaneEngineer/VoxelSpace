@@ -176,7 +176,7 @@ export default class Render extends CanvasView
             //let zz = z; //PERSPECTIVE
             //let zz = (z > zNear ? 1 : z); //ORTHO
             let zz = fovIsNonZero ? z  //PERSPECTIVE 
-                                  :(z > zNear ? 1 : z); //ORTHO
+                                  : 1;//(z > zNear ? 1 : z); //ORTHO
             //let ww = screenwidth; //PERSPECTIVE
             //let ww = 1; //ORTHO
             let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
