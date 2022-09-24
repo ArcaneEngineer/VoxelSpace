@@ -160,7 +160,7 @@ export default class Render extends CanvasView
         let rx = Math.sin(heading+hhFov);
         let ry = Math.cos(heading+hhFov);
         
-        //et fovIsNonZero = 0// hFov == 0 ? 0 : 1;
+        //let fovIsNonZero = 0// hFov == 0 ? 0 : 1;
         let fovIsNonZero = hFov == 0 ? 0 : 1;
         console.log(camera.hFov, fovIsNonZero);
         //console.log();
@@ -172,6 +172,7 @@ export default class Render extends CanvasView
             //without *z, this describes unit circle. 
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
+            
             //let zz = z; //PERSPECTIVE
             //let zz = (z > zNear ? 1 : z); //ORTHO
             let zz = fovIsNonZero ? z  //PERSPECTIVE 
@@ -180,22 +181,12 @@ export default class Render extends CanvasView
             //let ww = 1; //ORTHO
             let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
                                   : 1; //ORTHO
-            let maplxo =  lx * zz; //-cosang * z - sinang * z;
-            let maplyo =  ly * zz; // sinang * z - cosang * z;
-            let maprxo =  rx * zz; // cosang * z - sinang * z;
-            let mapryo =  ry * zz; //-sinang * z - cosang * z;
             
-            //let maplxo =  -cosang * z - sinang * z;
-            //let maplyo =   sinang * z - cosang * z;
-            //let maprxo =   cosang * z - sinang * z;
-            //let mapryo =  -sinang * z - cosang * z;
-            //TODO get our custom points' calc above to have same signs / rotation etc.
-                    
             //world map x,y change as we advance along this ray; derived from 
             //accelerating z as we move farther along the ray, hence in z loop.
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-            let dx = (maprxo - maplxo) / ww;// / screenwidth;
-            let dy = (mapryo - maplyo) / ww;// / screenwidth;
+            let dx = (rx - lx) * zz / ww;// / screenwidth;
+            let dy = (ry - ly) * zz / ww;// / screenwidth;
             //console.log("d=", dx, dy);
             
             //world map coordinates (float)
