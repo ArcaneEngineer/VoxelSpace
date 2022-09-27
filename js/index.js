@@ -3,7 +3,8 @@
 import Map from './Map.js';
 import Io from './Io.js';
 import Time from './Time.js';
-import Render from './Render.js';
+import RaycasterView from './RaycasterView.js';
+//import TopView from './TopView.js';
 import Camera from './Camera.js';
 
 // ---------------------------------------------
@@ -13,7 +14,7 @@ var time = undefined; //new Date().getTime();
 var fpsTime = undefined; //new Date().getTime();
 var map = undefined;
 var io = undefined;
-var render = undefined;
+var raycaster = undefined;
 var camera = undefined;
 
 function Init()
@@ -23,8 +24,8 @@ function Init()
     map = new Map(); map.Load("C1W;D1");
     camera = new Camera();
     io = new Io(camera, time, "firstperson");
-    render = new Render(camera, map, io, time, fpsTime, "firstperson");
-    window.onresize = e => render.OnResizeWindow(e); render.OnResizeWindow(); //kicks off rendering.
+    raycaster = new RaycasterView(camera, map, io, time, fpsTime, "firstperson");
+    window.onresize = e => raycaster.OnResizeWindow(e); raycaster.OnResizeWindow(); //kicks off rendering.
 }
 
 Init();

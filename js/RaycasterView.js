@@ -1,6 +1,6 @@
 import CanvasView from './CanvasView.js';
 
-export default class Render extends CanvasView
+export default class RaycasterView extends CanvasView
 {
     camera    = undefined
     map       = undefined
@@ -75,6 +75,8 @@ export default class Render extends CanvasView
         this.Render();
     }
     
+    timeAccumulated = 0
+    
     Render()
     {
         this.updaterunning = true;
@@ -87,18 +89,22 @@ export default class Render extends CanvasView
         this.Flip();
         
         //TODO put into a UI view class
-        if (this.frames >= 120) //every 2 seconds or so in the ideal case
+        if (this.timeAccumulated >= 1000)
         {
-            //TODO cache instead of getElementById each time.
-            document.getElementById('fps').innerText = (this.frames / this.fpsTime.delta * 1000).toFixed(1) + " fps";
+            let fps = this.frames / (this.timeAccumulated * 0.001);
             
-            this.fpsTime.updateDelta();
+            //TODO cache instead of getElementById each time.
+            document.getElementById('fps').innerText = fps.toFixed(1) + " fps";
             
             this.frames = 0;
+            this.timeAccumulated = 0
         }
         this.frames++;
-        
-        window.requestAnimationFrame(e => this.Render(e), 0);
+        this.fpsTime.updateDelta();
+        this.timeAccumulated += this.fpsTime.delta;
+        //console.log(this.timeAccumulated);
+        //window.requestAnimationFrame(e => this.Render(e), 0);
+        window.requestAnimationFrame(this.Render.bind(this), 0);
     }
     
     // Show the back buffer on screen
@@ -124,20 +130,21 @@ export default class Render extends CanvasView
         let mapheightperiod = this.map.height - 1;
 
         let screenwidth = this.canvas.width|0;
+        let screenheight = this.canvas.height;
         //let sinang = Math.sin(camera.angle);
         //let cosang = Math.cos(camera.angle);
-        
-        //TODO what if screen width changes?
-        for (let x = 0; x < screenwidth; x++)
-            this.ymin[x] = this.canvas.height; //TODO OPTIMISE
+
 
         let deltaz = 1.;
         let buf32 = this.buf32;
         
         // Render from front to back
         let camera = this.camera;
-        let zNear = camera.zNear;
+        //NEW plane based: zNear is assumed to always be at 0.
+        let zNear = 1;//camera.zNear;
         let zFar  = camera.zFar;
+        let wNear = 1.0;
+        let wFar  = 2.0;
         let height = camera.height;
         let horizon = camera.horizon|0;
         let camx = camera.x;
@@ -154,16 +161,62 @@ export default class Render extends CanvasView
         
         let ymin = this.ymin;
         
-        let lx = Math.sin(heading-hhFov);
-        let ly = Math.cos(heading-hhFov);
         
-        let rx = Math.sin(heading+hhFov);
-        let ry = Math.cos(heading+hhFov);
+                //TODO what if screen width changes?
+        for (let x = 0; x < screenwidth; x++)
+            ymin[x] = screenheight; //TODO OPTIMISE
+        
+        //OLD
+        //corresponds to a zNear=1.0 (unit circle)
+        let lx = Math.sin(heading-hhFov)// * zNear;
+        let ly = Math.cos(heading-hhFov)// * zNear;
+        let rx = Math.sin(heading+hhFov)// * zNear;
+        let ry = Math.cos(heading+hhFov)// * zNear;
+        //console.log("l=", lx, ly, "r=", rx, ry);
+        
+        
+        /*
+        //NEW
+        //DEV -hhFov to match old method - could remove later?
+        let cx = Math.sin(heading-hhFov);
+        let cy = Math.cos(heading-hhFov);
+        console.log("c=", cx, cy);
+        //get the perp vector by swapping components
+        let ax = cy// / screenwidth;
+        let ay = cx// / screenwidth;
+        //let rx = -cy//lx >= 0 ? -cy : cy;
+        //let ry = -cx//ly >= 0 ? -cx : cx;
+        console.log("a=", cy, cx);
+        //let am2 = ax * ax + ay * ay;
+        //let am = Math.sqrt(am2);
+        //normalise it (not necessary if c was on unit circle)
+        // ax /= am;
+        // ay /= am;
+        
+        //let nearWidth = 1.;
+        //let farWidth = 1.;
+        //starting vec (offset multiple times from start along the neg perp vec)
+        //TODO remove all cx,cy here - we want near plane *on* pinhole camera.
+        //let lx =cx-ax// - ax * wNear / 2;
+        //let ly =cy-ay// - ay * wNear / 2;
+        //let rx =cx+ax// + ax * wNear / 2;
+        //let ry =cy+ay// + ay * wNear / 2;
+        console.log("l=", lx, ly, "r=", rx, ry);
+        */
         
         //let fovIsNonZero = 0// hFov == 0 ? 0 : 1;
-        let fovIsNonZero = hFov == 0 ? 0 : 1;
-        console.log(camera.hFov, fovIsNonZero);
+        //let fovIsNonZero = hFov == 0 ? 0 : 1;
+        //console.log(camera.hFov, fovIsNonZero);
         //console.log();
+        
+        let ww = screenwidth; //PERSPECTIVE
+        //let ww = 1; //ORTHO
+        //let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
+        //                          : 1; //ORTHO
+        
+let dx =         (rx - lx) / ww; 
+let dy =         (ry - ly) / ww; 
+        
         for (let z = zNear; z < zFar; z += deltaz) //for each ray step
         {
             //get float world space map coords we sample at L,R edges of screen,
@@ -173,38 +226,43 @@ export default class Render extends CanvasView
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
             
-            //let zz = z; //PERSPECTIVE
+            let zz = z; //PERSPECTIVE
             //let zz = (z > zNear ? 1 : z); //ORTHO
-            let zz = fovIsNonZero ? z  //PERSPECTIVE 
-                                  : 1;//(z > zNear ? 1 : z); //ORTHO
-            //let ww = screenwidth; //PERSPECTIVE
-            //let ww = 1; //ORTHO
-            let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
-                                  : 1; //ORTHO
+            //let zz = fovIsNonZero ? z  //PERSPECTIVE 
+            //                      : 1;//(z > zNear ? 1 : z); //ORTHO
             
-            //world map x,y change as we advance along this ray; derived from 
-            //accelerating z as we move farther along the ray, hence in z loop.
+            //world map x,y change as we advance along "layer" (in x); derived 
+            //from non-linear z as we move farther along the ray, so in z loop.
+            //mul-by-z is what creates lateral perspective!
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-            let dx = (rx - lx) * zz / ww;// / screenwidth;
-            let dy = (ry - ly) * zz / ww;// / screenwidth;
-            //console.log("d=", dx, dy);
+            //Q. why do we divide by screenwidth here?
+            //A. because we are going to end up with multiples of screenwidth
+            //   every time we step in x! (this is the 1/xth frac of screen)
+            //let mapdx = (rx - lx) * zz / ww;// / screenwidth;
+            //let mapdy = (ry - ly) * zz / ww;// / screenwidth;
+            let mapdx = dx * zz;
+            let mapdy = dy * zz;
             
+            //these will be smallest when z is smallest.
+            
+            //console.log("d=", dx, dy);
             //world map coordinates (float)
-            let maplx = lx * z + camx;
-            let maply = ly * z + camy;
-            let maprx = rx * z + camx;
-            let mapry = ry * z + camy;
-
+            let maplx = camx + lx * z;
+            let maply = camy + ly * z;
+            let maprx = camx + rx * z;
+            let mapry = camy + ry * z;
+            
             //div-by-z causes rays to diverge vertically (no angles stored).
-            let invzz = fovIsNonZero ? 800. / z //PERSPECTIVE
-                                     : 1; //ORTHO
+            let invzz = 800. / z //PERSPECTIVE
+            //let invzz = fovIsNonZero ? 800. / z //PERSPECTIVE
+            //                         : 1; //ORTHO
             //let invzz = 800. / z; //PERSPECTIVE
             //let invzz = 1; //ORTHO
             let invz = yk * invzz;//Math.pow(z, camera.que);
             
             let xStart = 0;
             let xEnd = screenwidth;
-            for (let x = xStart; x < xEnd; x++) //for each ray
+            for (let x = xStart; x < xEnd; x++) //for each ray (screen space col)
             {
                 //map 1D coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
@@ -218,7 +276,7 @@ export default class Render extends CanvasView
                 //Z: distance from the eye to the considered point
                 //Yk: constant to scale the projection, possibly negative
                 //Yc: constant to centre the projection, usually half the screen resolution
-                let ytop = (height - columnscale * mapaltitude[mapoffset]) * invz + horizon|0;
+                let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
                 
                 //draw the vertical line segment...
                 let ybot = ymin[x];
@@ -241,8 +299,8 @@ export default class Render extends CanvasView
                 ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
                 
                 //interpolate (gradually "rasterise") between start and end map tile
-                maplx += dx;
-                maply += dy;
+                maplx += mapdx;
+                maply += mapdy;
             }
             //orthographic z delta from camera centre. i.e. regardless of heading
             //of each ray off camera centre, its z stepping is the same,
