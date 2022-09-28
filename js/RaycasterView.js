@@ -117,12 +117,13 @@ export default class RaycasterView extends CanvasView
     RenderBackground()
     {
         let buf32 = this.buf32;
-        let color = this.backgroundcolor|0;
-        for (let i = 0; i < buf32.length; i++) buf32[i] = color|0;
+        let backgroundcolor = this.backgroundcolor|0;
+        for (let i = 0; i < buf32.length; i++) buf32[i] = backgroundcolor|0;
     }
     
     RenderTerrain()
     {
+        let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
         let buf32 = this.buf32;
                 
@@ -150,8 +151,8 @@ export default class RaycasterView extends CanvasView
         let columnscale = camera.columnscale;
         let perspective = camera.perspective;
         let rayStepAccl = camera.rayStepAccl;
-        let zNear = 1;//camera.zNear;
-        let zFar  = camera.zFar;
+        let zNearClip = camera.zNear; //there may be another zNear for projection
+        let zFarClip  = camera.zFar;
         let nearWidth = camera.nearWidth;
         let halfNearWidth = nearWidth / 2;
         let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
@@ -164,8 +165,10 @@ export default class RaycasterView extends CanvasView
         //let wwinv = 1. / ww;
         let wwinv = 1. / screenwidth;
         
-        let cx = Math.sin(heading)// * zNear;
-        let cy = Math.cos(heading)// * zNear;
+        //NOTE! implicit or explicit *1 projection plane distance!
+        const zNearProj = 1.;
+        let cx = Math.sin(heading) * zNearProj;
+        let cy = Math.cos(heading) * zNearProj;
         
         const HALFPI = Math.PI / 2;
         
@@ -189,7 +192,7 @@ export default class RaycasterView extends CanvasView
         //PERSPECTIVE - * z requires / w
         //ORTHO - neither, identity, z & w are 1
         
-        for (let z = zNear; z < zFar; z += deltaz) //for each ray step
+        for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step
         {
             //get float world space map coords we sample at L,R edges of screen,
             //at this current depth (z). (consider camera lateral arc from top)
@@ -258,7 +261,7 @@ export default class RaycasterView extends CanvasView
                 let offset = ytop * screenwidth + x; //init.
                 for (let k = ytop; k < ybot; k++)
                 {
-                    buf32[offset]  = flag * mapcolor[mapoffset];
+                    buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
                     offset        += flag * screenwidth; //increase for line above.
                 }
                 //...draw the vertical line segment.
