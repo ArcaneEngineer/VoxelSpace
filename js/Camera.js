@@ -12,7 +12,7 @@ export default class Camera
     nearWidth = 1.
     columnscale = 1.
     perspective = true
-    rayStepAccl = 1.
+    rayStepAccl = 0.01
     
     setvFov(value)
     {

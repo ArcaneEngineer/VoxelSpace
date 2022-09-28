@@ -146,7 +146,7 @@ export default class RaycasterView extends CanvasView
         let wNear = 1.0;
         let wFar  = 2.0;
         let height = camera.height;
-        let horizon = camera.horizon|0;
+        let horizon = screenheight / 2;//camera.horizon|0;
         let camx = camera.x;
         let camy = camera.y;
         let heading = camera.heading;
@@ -181,6 +181,10 @@ export default class RaycasterView extends CanvasView
         let rx = cx + rox * halfNearWidthScaled;
         let ry = cy + roy * halfNearWidthScaled;
         
+        let dx = rx - lx;
+        let dy = ry - ly;
+        //console.log("d=", dx, dy);
+            
         let fov = Math.atan(halfNearWidth / zNear)
         console.log("halfNearWidth=", halfNearWidth, "fov=", fov * 180. / Math.PI);
         
@@ -205,6 +209,8 @@ export default class RaycasterView extends CanvasView
         //let ww = 1; //ORTHO
         let ww = perspective ? screenwidth //PERSPECTIVE
                              : 1; //ORTHO
+                             
+        let wwinv = 1. / ww;
         
         //PERSPECTIVE - * z requires / w
         //ORTHO - neither, identity, z & w are 1
@@ -218,11 +224,9 @@ export default class RaycasterView extends CanvasView
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
             
-            //let zz = z; //PERSPECTIVE
+            let zz = z; //PERSPECTIVE
             //let zz = 1//(z > zNear ? 1 : z); //ORTHO
-            let zz = perspective ? z  //PERSPECTIVE 
-                                 : 1;//(z > zNear ? 1 : z); //ORTHO
-            
+            //let zz = perspective ? z : 1;//(z > zNear ? 1 : z); //ORTHO
             
             //Sideways step increment (in camera's local x)
             //Q. why do we mul by z here?
@@ -234,19 +238,11 @@ export default class RaycasterView extends CanvasView
             //A. because we need fractions of screenwidth each time we step in x
             //   for the current ray depth. (1/screenwidth frac of screen)
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-            let mapdx = (rx - lx) * zz / ww;// / screenwidth;
-            let mapdy = (ry - ly) * zz / ww;// / screenwidth;
+            let mapdx = dx * zz * wwinv// / ww;// / screenwidth;
+            let mapdy = dy * zz * wwinv// / ww;// / screenwidth;
             // let mapdx = dx * zz;
             // let mapdy = dy * zz;
             
-            //what we're doing here is moving ray divergence from * z / w to
-            //outside this loop - the divergence between near and far planes.
-            // let mapdx = (rx - lx)// * zz / ww;// / screenwidth;
-            // let mapdy = (ry - ly)// * zz / ww;// / screenwidth;
-            
-            //these will be smallest when z is smallest.
-            
-            //console.log("d=", dx, dy);
             //forward step increment (actually start/left step per increasing x)
             //world map coordinates (float)
             //NOTE l,r MUST be the (small) values at near plane z=1 (ray start).
@@ -254,22 +250,18 @@ export default class RaycasterView extends CanvasView
             //ortho or perspective. Thus lx / rx are pre-divided by screenwidth.
             let maplx = camx + lx * z;
             let maply = camy + ly * z;
-            // let maprx = camx + rx * z;
-            // let mapry = camy + ry * z;
             
             //div-by-z causes rays to diverge vertically (no angles stored).
-            let invzz = perspective ? screenheight / (z * nearWidth) //PERSPECTIVE
-                                    : 1; //ORTHO
-            //let invzz = screenheight / (z * nearWidth); //PERSPECTIVE
+            //let invzz = perspective ? screenheight / (z * nearWidth) : 1; //ORTHO
+            let invzz = screenheight / (z * nearWidth); //PERSPECTIVE
             //let invzz = 1; //ORTHO
             let invz = yk * invzz;
             
             let xStart = 0;
             let xEnd = screenwidth;
-            //let xEnd = 100;
+            
             for (let x = xStart; x < xEnd; x++) //for each ray (screen space col)
             {
-                //if (z == 1 && x == 0) console.log(maprx, mapry);
                 //map 1D coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 //https://web.archive.org/web/20050206144506/http://www.flipcode.com/articles/voxelland_part02.shtml
@@ -282,7 +274,7 @@ export default class RaycasterView extends CanvasView
                 //Z: distance from the eye to the considered point
                 //Yk: constant to scale the projection, possibly negative
                 //Yc: constant to centre the projection, usually half the screen resolution
-                let ytop = (height - mapaltitude[mapoffset]) * invz + horizon|0;
+                let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
                 
                 //draw the vertical line segment...
                 let ybot = ymin[x];
@@ -290,8 +282,7 @@ export default class RaycasterView extends CanvasView
                 ytop = ytop < 0 ? 0 : ytop;   
                 
                 // get offset on screen for the vertical line
-                //let xx = (x - hscreenwidth);
-                let offset = ((ytop * screenwidth) + x); //init.
+                let offset = ytop * screenwidth + x; //init.
                 for (let k = ytop; k < ybot; k++)
                 {
                     buf32[offset]  = flag * mapcolor[mapoffset];
@@ -302,6 +293,8 @@ export default class RaycasterView extends CanvasView
                 //...This variable loop length is where the problem is for GPU.
                 //Need to restrict it to warp or wavefront size, or multiple thereof
                 //(32 or 64 "threads" / "runs of pixels" at a time.)
+                //It just needs to do *nothing* after the loop would have completed.
+                //e.g. by adding zero, or mul / div by 1.0.
                 
                 ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
                 
