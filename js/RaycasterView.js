@@ -123,94 +123,68 @@ export default class RaycasterView extends CanvasView
     
     RenderTerrain()
     {
-        //let result = 2 * Math.atan(camera.yk * 2) * 180. /  Math.PI;
-        // console.log(camera.yk, Math.asin(camera.yk) * 180 / Math.PI);
-        
-        let mapwidthperiod = this.map.width - 1;
-        let mapheightperiod = this.map.height - 1;
-
-        let screenwidth = this.canvas.width|0;
-        let screenheight = this.canvas.height;
-        //let sinang = Math.sin(camera.angle);
-        //let cosang = Math.cos(camera.angle);
-        let hscreenwidth = screenwidth / 2;
-
         let deltaz = 1.;
         let buf32 = this.buf32;
-        
-        // Render from front to back
-        let camera = this.camera;
-        //NEW plane based: zNear is assumed to always be at 0.
-        let zNear = 1;//camera.zNear;
-        let zFar  = camera.zFar;
-        let wNear = 1.0;
-        let wFar  = 2.0;
-        let height = camera.height;
-        let horizon = screenheight / 2;//camera.horizon|0;
-        let camx = camera.x;
-        let camy = camera.y;
-        let heading = camera.heading;
+                
         let map = this.map;
+        let mapwidthperiod  = map.width - 1;
+        let mapheightperiod = map.height - 1;
         let mapaltitude = map.altitude;
         let mapcolor = map.color;
         let mapshift = map.shift;
-        //let screenwidthinv = 1. / screenwidth;
+        
+        let screenwidth  = this.canvas.width|0;
+        let screenheight = this.canvas.height;
+        
+        let ymin = this.ymin;
+        for (let x = 0; x < screenwidth; x++)
+            ymin[x] = screenheight; //TODO OPTIMISE
+        
+        // Render from front to back
+        let camera = this.camera;
+        let height = camera.height;
+        let camx = camera.x;
+        let camy = camera.y;
+        let heading = camera.heading;
         let yk = camera.yk;
         let columnscale = camera.columnscale;
         let perspective = camera.perspective;
         let rayStepAccl = camera.rayStepAccl;
-        //let hFov = camera.hFov;
-        //let hhFov = camera.hFov / 2;//half horizontal fov
+        let zNear = 1;//camera.zNear;
+        let zFar  = camera.zFar;
+        let nearWidth = camera.nearWidth;
+        let halfNearWidth = nearWidth / 2;
+        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
+
+        let horizon = screenheight / 2;//camera.horizon|0;
+        //let ww = screenwidth; //PERSPECTIVE
+        //let ww = 1; //ORTHO
+        //let ww = perspective ? screenwidth //PERSPECTIVE
+        //                     : 1; //ORTHO
+        //let wwinv = 1. / ww;
+        let wwinv = 1. / screenwidth;
         
         let cx = Math.sin(heading)// * zNear;
         let cy = Math.cos(heading)// * zNear;
         
+        const HALFPI = Math.PI / 2;
+        
+        //l(eft), r(ight) edges of near plane.
         //-90 deg along near plane
-        let lox = Math.sin(heading - Math.PI / 2);
-        let loy = Math.cos(heading - Math.PI / 2);
+        let lx = cx + Math.sin(heading - HALFPI) * halfNearWidthScaled;
+        let ly = cy + Math.cos(heading - HALFPI) * halfNearWidthScaled;
+        
         //+90 deg alone near plane
-        let rox = Math.sin(heading + Math.PI / 2);
-        let roy = Math.cos(heading + Math.PI / 2);
-        
-        let nearWidth = camera.nearWidth;
-        let halfNearWidth = nearWidth / 2;
-        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
-        let lx = cx + lox * halfNearWidthScaled;
-        let ly = cy + loy * halfNearWidthScaled;
-        
-        let rx = cx + rox * halfNearWidthScaled;
-        let ry = cy + roy * halfNearWidthScaled;
+        let rx = cx + Math.sin(heading + HALFPI) * halfNearWidthScaled;
+        let ry = cy + Math.cos(heading + HALFPI) * halfNearWidthScaled;
         
         let dx = rx - lx;
         let dy = ry - ly;
         //console.log("d=", dx, dy);
-            
-        let fov = Math.atan(halfNearWidth / zNear)
-        console.log("halfNearWidth=", halfNearWidth, "fov=", fov * 180. / Math.PI);
-        
-        
-        //let hFov = Math.atan(rox / zNear); //ad
-        //let hhFov = camera.hFov / 2;//half horizontal fov
-        //console.log(hFov);
-        let ymin = this.ymin;
-        
-        for (let x = 0; x < screenwidth; x++)
-            ymin[x] = screenheight; //TODO OPTIMISE
-        
-        //OLD
-        //corresponds to a zNear=1.0 (unit circle)
-        // let lx = Math.sin(heading-hhFov)// * zNear;
-        // let ly = Math.cos(heading-hhFov)// * zNear;
-        // let rx = Math.sin(heading+hhFov)// * zNear;
-        // let ry = Math.cos(heading+hhFov)// * zNear;
         //console.log("c=", cx, cy, "l=", lx, ly, "r=", rx, ry);
-
-        //let ww = screenwidth; //PERSPECTIVE
-        //let ww = 1; //ORTHO
-        let ww = perspective ? screenwidth //PERSPECTIVE
-                             : 1; //ORTHO
-                             
-        let wwinv = 1. / ww;
+        
+        //let fov = Math.atan(halfNearWidth / zNear); //DEBUG ONLY
+        //console.log("halfNearWidth=", halfNearWidth, "fov=", fov * 180. / Math.PI);
         
         //PERSPECTIVE - * z requires / w
         //ORTHO - neither, identity, z & w are 1
@@ -224,7 +198,7 @@ export default class RaycasterView extends CanvasView
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
             
-            let zz = z; //PERSPECTIVE
+            //let zz = z; //PERSPECTIVE
             //let zz = 1//(z > zNear ? 1 : z); //ORTHO
             //let zz = perspective ? z : 1;//(z > zNear ? 1 : z); //ORTHO
             
@@ -238,10 +212,8 @@ export default class RaycasterView extends CanvasView
             //A. because we need fractions of screenwidth each time we step in x
             //   for the current ray depth. (1/screenwidth frac of screen)
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-            let mapdx = dx * zz * wwinv// / ww;// / screenwidth;
-            let mapdy = dy * zz * wwinv// / ww;// / screenwidth;
-            // let mapdx = dx * zz;
-            // let mapdy = dy * zz;
+            let mapdx = dx * z * wwinv// / ww;// / screenwidth;
+            let mapdy = dy * z * wwinv// / ww;// / screenwidth;
             
             //forward step increment (actually start/left step per increasing x)
             //world map coordinates (float)
