@@ -202,7 +202,8 @@ export default class RaycasterView extends CanvasView
             //let zz = 1//(z > zNear ? 1 : z); //ORTHO
             //let zz = perspective ? z : 1;//(z > zNear ? 1 : z); //ORTHO
             
-            //Sideways step increment (in camera's local x)
+            //Sideways step increment (in camera's local x): scale d on its own
+            //(i.e. because then we're scaling it around its origin w/o campos)
             //Q. why do we mul by z here?
             //A. it's the original algorithm's way to create lateral perspective.
             //world map x,y change as we advance along "layer" (in x); derived 
