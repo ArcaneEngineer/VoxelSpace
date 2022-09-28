@@ -133,7 +133,7 @@ export default class RaycasterView extends CanvasView
         let screenheight = this.canvas.height;
         //let sinang = Math.sin(camera.angle);
         //let cosang = Math.cos(camera.angle);
-
+        let hscreenwidth = screenwidth / 2;
 
         let deltaz = 1.;
         let buf32 = this.buf32;
@@ -150,72 +150,60 @@ export default class RaycasterView extends CanvasView
         let camx = camera.x;
         let camy = camera.y;
         let heading = camera.heading;
-        let mapaltitude = this.map.altitude;
-        let mapcolor = this.map.color;
-        let mapshift = this.map.shift;
+        let map = this.map;
+        let mapaltitude = map.altitude;
+        let mapcolor = map.color;
+        let mapshift = map.shift;
         //let screenwidthinv = 1. / screenwidth;
         let yk = camera.yk;
         let columnscale = camera.columnscale;
-        let hFov = camera.hFov;
-        let hhFov = camera.hFov / 2;//half horizontal fov
+        let perspective = camera.perspective;
+        //let hFov = camera.hFov;
+        //let hhFov = camera.hFov / 2;//half horizontal fov
         
+        let cx = Math.sin(heading)// * zNear;
+        let cy = Math.cos(heading)// * zNear;
+        
+        //-90 deg along near plane
+        let lox = Math.sin(heading - Math.PI / 2);
+        let loy = Math.cos(heading - Math.PI / 2);
+        //+90 deg alone near plane
+        let rox = Math.sin(heading + Math.PI / 2);
+        let roy = Math.cos(heading + Math.PI / 2);
+        
+        let nearWidth = camera.nearWidth;
+        let halfNearWidth = nearWidth / 2;
+        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
+        let lx = cx + lox * halfNearWidthScaled;
+        let ly = cy + loy * halfNearWidthScaled;
+        
+        let rx = cx + rox * halfNearWidthScaled;
+        let ry = cy + roy * halfNearWidthScaled;
+        
+        
+        //let hFov = Math.atan(rox / zNear); //ad
+        //let hhFov = camera.hFov / 2;//half horizontal fov
+        //console.log(hFov);
         let ymin = this.ymin;
         
-        
-                //TODO what if screen width changes?
         for (let x = 0; x < screenwidth; x++)
             ymin[x] = screenheight; //TODO OPTIMISE
         
         //OLD
         //corresponds to a zNear=1.0 (unit circle)
-        let lx = Math.sin(heading-hhFov)// * zNear;
-        let ly = Math.cos(heading-hhFov)// * zNear;
-        let rx = Math.sin(heading+hhFov)// * zNear;
-        let ry = Math.cos(heading+hhFov)// * zNear;
-        //console.log("l=", lx, ly, "r=", rx, ry);
-        
-        
-        /*
-        //NEW
-        //DEV -hhFov to match old method - could remove later?
-        let cx = Math.sin(heading-hhFov);
-        let cy = Math.cos(heading-hhFov);
-        console.log("c=", cx, cy);
-        //get the perp vector by swapping components
-        let ax = cy// / screenwidth;
-        let ay = cx// / screenwidth;
-        //let rx = -cy//lx >= 0 ? -cy : cy;
-        //let ry = -cx//ly >= 0 ? -cx : cx;
-        console.log("a=", cy, cx);
-        //let am2 = ax * ax + ay * ay;
-        //let am = Math.sqrt(am2);
-        //normalise it (not necessary if c was on unit circle)
-        // ax /= am;
-        // ay /= am;
-        
-        //let nearWidth = 1.;
-        //let farWidth = 1.;
-        //starting vec (offset multiple times from start along the neg perp vec)
-        //TODO remove all cx,cy here - we want near plane *on* pinhole camera.
-        //let lx =cx-ax// - ax * wNear / 2;
-        //let ly =cy-ay// - ay * wNear / 2;
-        //let rx =cx+ax// + ax * wNear / 2;
-        //let ry =cy+ay// + ay * wNear / 2;
-        console.log("l=", lx, ly, "r=", rx, ry);
-        */
-        
-        //let fovIsNonZero = 0// hFov == 0 ? 0 : 1;
-        //let fovIsNonZero = hFov == 0 ? 0 : 1;
-        //console.log(camera.hFov, fovIsNonZero);
-        //console.log();
-        
-        let ww = screenwidth; //PERSPECTIVE
+        // let lx = Math.sin(heading-hhFov)// * zNear;
+        // let ly = Math.cos(heading-hhFov)// * zNear;
+        // let rx = Math.sin(heading+hhFov)// * zNear;
+        // let ry = Math.cos(heading+hhFov)// * zNear;
+        console.log("c=", cx, cy, "l=", lx, ly, "r=", rx, ry);
+
+        //let ww = screenwidth; //PERSPECTIVE
         //let ww = 1; //ORTHO
-        //let ww = fovIsNonZero ? screenwidth //PERSPECTIVE
-        //                          : 1; //ORTHO
+        let ww = perspective ? screenwidth //PERSPECTIVE
+                             : 1; //ORTHO
         
-let dx =         (rx - lx) / ww; 
-let dy =         (ry - ly) / ww; 
+        //PERSPECTIVE - * z requires / w
+        //ORTHO - neither, identity, z & w are 1
         
         for (let z = zNear; z < zFar; z += deltaz) //for each ray step
         {
@@ -226,44 +214,59 @@ let dy =         (ry - ly) / ww;
             //Stepping between the two positions representing outer edges of screen,
             //combined with increasing z, causes rays to diverge horizontally.
             
-            let zz = z; //PERSPECTIVE
-            //let zz = (z > zNear ? 1 : z); //ORTHO
-            //let zz = fovIsNonZero ? z  //PERSPECTIVE 
-            //                      : 1;//(z > zNear ? 1 : z); //ORTHO
+            //let zz = z; //PERSPECTIVE
+            //let zz = 1//(z > zNear ? 1 : z); //ORTHO
+            let zz = perspective ? z  //PERSPECTIVE 
+                                 : 1;//(z > zNear ? 1 : z); //ORTHO
             
+            
+            //Sideways step increment (in camera's local x)
+            //Q. why do we mul by z here?
+            //A. it's the original algorithm's way to create lateral perspective.
             //world map x,y change as we advance along "layer" (in x); derived 
             //from non-linear z as we move farther along the ray, so in z loop.
-            //mul-by-z is what creates lateral perspective!
-            //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
+            //
             //Q. why do we divide by screenwidth here?
             //A. because we are going to end up with multiples of screenwidth
             //   every time we step in x! (this is the 1/xth frac of screen)
-            //let mapdx = (rx - lx) * zz / ww;// / screenwidth;
-            //let mapdy = (ry - ly) * zz / ww;// / screenwidth;
-            let mapdx = dx * zz;
-            let mapdy = dy * zz;
+            //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
+            let mapdx = (rx - lx) * zz / ww;// / screenwidth;
+            let mapdy = (ry - ly) * zz / ww;// / screenwidth;
+            // let mapdx = dx * zz;
+            // let mapdy = dy * zz;
+            
+            //what we're doing here is moving ray divergence from * z / w to
+            //outside this loop - the divergence between near and far planes.
+            // let mapdx = (rx - lx)// * zz / ww;// / screenwidth;
+            // let mapdy = (ry - ly)// * zz / ww;// / screenwidth;
             
             //these will be smallest when z is smallest.
             
             //console.log("d=", dx, dy);
+            //forward step increment (actually start/left step per increasing x)
             //world map coordinates (float)
+            //NOTE l,r MUST be the (small) values at near plane z=1 (ray start).
+            //Thus as we scale by increasing z, we get correct map-space pos,
+            //ortho or perspective. Thus lx / rx are pre-divided by screenwidth.
             let maplx = camx + lx * z;
             let maply = camy + ly * z;
-            let maprx = camx + rx * z;
-            let mapry = camy + ry * z;
+            // let maprx = camx + rx * z;
+            // let mapry = camy + ry * z;
+            
             
             //div-by-z causes rays to diverge vertically (no angles stored).
-            let invzz = 800. / z //PERSPECTIVE
-            //let invzz = fovIsNonZero ? 800. / z //PERSPECTIVE
-            //                         : 1; //ORTHO
-            //let invzz = 800. / z; //PERSPECTIVE
+            let invzz = perspective ? screenheight / (z * nearWidth) //PERSPECTIVE
+                                    : 1; //ORTHO
+            //let invzz = screenheight / (z * nearWidth); //PERSPECTIVE
             //let invzz = 1; //ORTHO
             let invz = yk * invzz;//Math.pow(z, camera.que);
             
             let xStart = 0;
             let xEnd = screenwidth;
+            //let xEnd = 100;
             for (let x = xStart; x < xEnd; x++) //for each ray (screen space col)
             {
+                //if (z == 1 && x == 0) console.log(maprx, mapry);
                 //map 1D coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 //https://web.archive.org/web/20050206144506/http://www.flipcode.com/articles/voxelland_part02.shtml
@@ -284,6 +287,7 @@ let dy =         (ry - ly) / ww;
                 ytop = ytop < 0 ? 0 : ytop;   
                 
                 // get offset on screen for the vertical line
+                //let xx = (x - hscreenwidth);
                 let offset = ((ytop * screenwidth) + x); //init.
                 for (let k = ytop; k < ybot; k++)
                 {

@@ -9,8 +9,10 @@ export default class Camera
     zFar  = 10000.   // far plane distance
     yk = 0.866//0.7071, //45deg
     hFov = 1.57079633
+    nearWidth = 1.
     columnscale = 1.
     que = 1.
+    perspective = true
     
     setvFov(value)
     {

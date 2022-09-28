@@ -24,6 +24,8 @@ export default class Io
         que: undefined,
         heading: undefined,
         height: undefined,
+        hFovTest: undefined,
+        perspective: undefined,
     }
     
     constructor(camera, time, elementName)
@@ -52,15 +54,19 @@ export default class Io
         controls.zFar              = document.getElementById("zFar");
         controls.horizon           = document.getElementById("horizon");
         controls.columnscale       = document.getElementById("columnscale");
-        controls.hFov              = document.getElementById("hFov");
-        controls.vFov              = document.getElementById("vFov");
+        // controls.hFov              = document.getElementById("hFov");
+        // controls.vFov              = document.getElementById("vFov");
         controls.heading           = document.getElementById("heading");
         controls.height            = document.getElementById("height");
+        controls.nearWidth         = document.getElementById("nearWidth");
+        controls.perspective      = document.getElementById("perspective");
         
         controls.zNear.oninput = e => this.onChangezNear(e);
         controls.zFar .oninput = e => this.onChangezFar(e);
         controls.height.oninput = e => this.onChangeHeight(e);
-        controls.hFov.oninput = e => this.onChangehFov(e);
+        // controls.hFov.oninput = e => this.onChangehFov(e);
+        controls.nearWidth.oninput = e => this.onChangeNearWidth(e);
+        controls.perspective.onchange = e => this.onChangePerspective(e);
         //controls.zFar .addEventListener("input", onzFarChanged);
         
         //let canvas = this.canvas = document.getElementById("voxels");
@@ -230,6 +236,20 @@ export default class Io
     {
         let camera = this.camera;
         camera.hFov = e.currentTarget.valueAsNumber;
+    }
+    
+    
+    onChangeNearWidth(e)
+    {
+        let camera = this.camera;
+        camera.nearWidth = e.currentTarget.valueAsNumber;
+    }
+    
+    onChangePerspective(e)
+    {
+        console.log(e);
+        let camera = this.camera;
+        camera.perspective = e.currentTarget.checked;
     }
     
     
