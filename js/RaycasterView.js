@@ -158,6 +158,7 @@ export default class RaycasterView extends CanvasView
         let yk = camera.yk;
         let columnscale = camera.columnscale;
         let perspective = camera.perspective;
+        let rayStepAccl = camera.rayStepAccl;
         //let hFov = camera.hFov;
         //let hhFov = camera.hFov / 2;//half horizontal fov
         
@@ -180,6 +181,9 @@ export default class RaycasterView extends CanvasView
         let rx = cx + rox * halfNearWidthScaled;
         let ry = cy + roy * halfNearWidthScaled;
         
+        let fov = Math.atan(halfNearWidth / zNear)
+        console.log("halfNearWidth=", halfNearWidth, "fov=", fov * 180. / Math.PI);
+        
         
         //let hFov = Math.atan(rox / zNear); //ad
         //let hhFov = camera.hFov / 2;//half horizontal fov
@@ -195,7 +199,7 @@ export default class RaycasterView extends CanvasView
         // let ly = Math.cos(heading-hhFov)// * zNear;
         // let rx = Math.sin(heading+hhFov)// * zNear;
         // let ry = Math.cos(heading+hhFov)// * zNear;
-        console.log("c=", cx, cy, "l=", lx, ly, "r=", rx, ry);
+        //console.log("c=", cx, cy, "l=", lx, ly, "r=", rx, ry);
 
         //let ww = screenwidth; //PERSPECTIVE
         //let ww = 1; //ORTHO
@@ -227,8 +231,8 @@ export default class RaycasterView extends CanvasView
             //from non-linear z as we move farther along the ray, so in z loop.
             //
             //Q. why do we divide by screenwidth here?
-            //A. because we are going to end up with multiples of screenwidth
-            //   every time we step in x! (this is the 1/xth frac of screen)
+            //A. because we need fractions of screenwidth each time we step in x
+            //   for the current ray depth. (1/screenwidth frac of screen)
             //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
             let mapdx = (rx - lx) * zz / ww;// / screenwidth;
             let mapdy = (ry - ly) * zz / ww;// / screenwidth;
@@ -253,13 +257,12 @@ export default class RaycasterView extends CanvasView
             // let maprx = camx + rx * z;
             // let mapry = camy + ry * z;
             
-            
             //div-by-z causes rays to diverge vertically (no angles stored).
             let invzz = perspective ? screenheight / (z * nearWidth) //PERSPECTIVE
                                     : 1; //ORTHO
             //let invzz = screenheight / (z * nearWidth); //PERSPECTIVE
             //let invzz = 1; //ORTHO
-            let invz = yk * invzz;//Math.pow(z, camera.que);
+            let invz = yk * invzz;
             
             let xStart = 0;
             let xEnd = screenwidth;
@@ -309,7 +312,7 @@ export default class RaycasterView extends CanvasView
             //orthographic z delta from camera centre. i.e. regardless of heading
             //of each ray off camera centre, its z stepping is the same,
             //as in a sliced CT-scan style view (but perspective, not ortho).
-            deltaz += 0.01; //OPTIMISE increments further away to be greater.
+            deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
         }
     }
 }

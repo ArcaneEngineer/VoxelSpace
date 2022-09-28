@@ -11,8 +11,8 @@ export default class Camera
     hFov = 1.57079633
     nearWidth = 1.
     columnscale = 1.
-    que = 1.
     perspective = true
+    rayStepAccl = 1.
     
     setvFov(value)
     {

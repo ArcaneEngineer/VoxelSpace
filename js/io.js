@@ -21,11 +21,11 @@ export default class Io
         columnscale: undefined,
         hFov: undefined,
         vFov: undefined,
-        que: undefined,
         heading: undefined,
         height: undefined,
         hFovTest: undefined,
         perspective: undefined,
+        rayStepAccl: undefined,
     }
     
     constructor(camera, time, elementName)
@@ -59,7 +59,8 @@ export default class Io
         controls.heading           = document.getElementById("heading");
         controls.height            = document.getElementById("height");
         controls.nearWidth         = document.getElementById("nearWidth");
-        controls.perspective      = document.getElementById("perspective");
+        controls.perspective       = document.getElementById("perspective");
+        controls.rayStepAccl      = document.getElementById("rayStepAccl");
         
         controls.zNear.oninput = e => this.onChangezNear(e);
         controls.zFar .oninput = e => this.onChangezFar(e);
@@ -67,6 +68,7 @@ export default class Io
         // controls.hFov.oninput = e => this.onChangehFov(e);
         controls.nearWidth.oninput = e => this.onChangeNearWidth(e);
         controls.perspective.onchange = e => this.onChangePerspective(e);
+        controls.rayStepAccl.onchange = e => this.onChangeRayStepAccl(e);
         //controls.zFar .addEventListener("input", onzFarChanged);
         
         //let canvas = this.canvas = document.getElementById("voxels");
@@ -247,11 +249,16 @@ export default class Io
     
     onChangePerspective(e)
     {
-        console.log(e);
+        //console.log(e);
         let camera = this.camera;
         camera.perspective = e.currentTarget.checked;
     }
     
+    onChangeRayStepAccl(e)
+    {
+        let camera = this.camera;
+        camera.rayStepAccl = e.currentTarget.valueAsNumber;
+    }
     
     // Update the camera for next frame. Dependent on keypresses
     UpdateCamera()
