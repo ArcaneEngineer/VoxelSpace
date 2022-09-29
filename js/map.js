@@ -10,6 +10,7 @@ export default class Map
     canvas = undefined
     
     toggled = false //actually a view attribute.
+    opacity = 1.0 //actually a view attribute.
     
     samplesbufarr = undefined
     samples = undefined

@@ -29,6 +29,8 @@ export default class MapView extends CanvasView
     
     map = undefined
     
+    containerDiv = undefined;
+    
     
     constructor(core) //TODO should be one or the other - probably core.
     {
@@ -44,7 +46,7 @@ export default class MapView extends CanvasView
         
         let canvas = this.canvas = document.getElementById("map");
         this.canvasSamples       = document.getElementById("samples");
-        
+        this.containerDiv       = document.getElementById("top");
         /*
         this.fovGroup            = document.getElementById("fovGroup");
         this.fovArc              = document.getElementById("fovArc");
@@ -70,7 +72,7 @@ export default class MapView extends CanvasView
         let scale = core.toggled ? 1.00 : 0.25;
         this.changeScale(scale);
         
-        
+        this.containerDiv.style.opacity = core.opacity;
         
         
         this.Flip();

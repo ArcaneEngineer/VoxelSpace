@@ -67,6 +67,9 @@ export default class Io
         controls.perspective       = document.getElementById("perspective");
         controls.rayStepAccl      = document.getElementById("rayStepAccl");
         controls.toggleMap      = document.getElementById("toggleMap");
+        controls.mapOpacity = document.getElementById("mapOpacity");
+        
+        
         
         controls.zNear.value = camera.zNear;
         controls.zFar.value = camera.zFar;
@@ -82,6 +85,8 @@ export default class Io
         controls.columnscale.oninput = e => this.onChangeColumnScale(e);
         
         controls.toggleMap.onchange = e => this.onToggleMap(e);
+        
+        controls.mapOpacity.oninput = e => this.onChangeMapOpacity(e);
         
         //controls.zFar .addEventListener("input", onzFarChanged);
         
@@ -291,6 +296,12 @@ export default class Io
     {
         let camera = this.camera;
         camera.columnscale = e.currentTarget.valueAsNumber;
+    }
+    
+    onChangeMapOpacity(e)
+    {
+        let map = this.map;
+        map.opacity = e.currentTarget.valueAsNumber;
     }
     
     // Update the camera for next frame. Dependent on keypresses
