@@ -69,15 +69,13 @@ export default class RaycasterView extends CanvasView
     }
 
     OnResizeWindow()
-    {        
+    {
         this.initUI(this.elementName);
-        
-        this.Render();
     }
     
     timeAccumulated = 0
     
-    Render()
+    update()
     {
         this.updaterunning = true;
         //console.log(this);
@@ -103,8 +101,7 @@ export default class RaycasterView extends CanvasView
         this.fpsTime.updateDelta();
         this.timeAccumulated += this.fpsTime.delta;
         //console.log(this.timeAccumulated);
-        //window.requestAnimationFrame(e => this.Render(e), 0);
-        window.requestAnimationFrame(this.Render.bind(this), 0);
+        
     }
     
     // Show the back buffer on screen

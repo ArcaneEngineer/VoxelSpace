@@ -7,8 +7,12 @@ export default class Map
     altitude = new Uint8Array (1024*1024) // 1024 * 1024 byte array: heights
     color    = new Uint32Array(1024*1024) // 1024 * 1024 int array: RGB colors
     
+    canvas = undefined
+    
     constructor()
     {
+        this.canvas = document.getElementById("map");//canvas;
+        console.log ("canv="+this.canvas);
         this.Init();
     }
     
@@ -35,12 +39,12 @@ export default class Map
                 var image = new Image();
                 //image.addEventListener("load", function() {
                 image.onload = function() {
-                    var tempcanvas = document.createElement("canvas");
-                    var tempcontext = tempcanvas.getContext("2d");
-                    tempcanvas.width = this.width;
-                    tempcanvas.height = this.height;
-                    tempcontext.drawImage(image, 0, 0, this.width, this.height);
-                    result[i] = tempcontext.getImageData(0, 0, this.width, this.height).data;
+                    var canvas = document.createElement("canvas");
+                    var context = canvas.getContext("2d");
+                    canvas.width = this.width;
+                    canvas.height = this.height;
+                    context.drawImage(image, 0, 0, this.width, this.height);
+                    result[i] = context.getImageData(0, 0, this.width, this.height);
                     pending--;
                     if (pending === 0) {
                         resolve(result);
@@ -57,17 +61,22 @@ export default class Map
         this.DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(result => this.OnLoadedImages(result) );
     }
 
+    //Once the chosen image pair (color, height) is loaded...
     OnLoadedImages(result)
     {
-        // console.log(this);
-        // console.log(result);
-        var datac = result[0];
-        var datah = result[1];
+        //
+        
+        
+        var datac = result[0].data;
+        var datah = result[1].data;
         for(var i=0; i<this.width*this.height; i++)
         {
             this.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
             this.altitude[i] = datah[i<<2];
         }
         //Draw();
+        
+        var context = this.canvas.getContext("2d");
+        context.putImageData(result[0], 0, 0);
     }
 }

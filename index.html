@@ -7,7 +7,7 @@
     <meta name="keywords" content="Voxel, VoxelSpace, Voxel Space, Comanche, landscape, rendering">
     <style>
         html, body {margin: 0; height: 100%; overflow: hidden}
-        canvas { width: 100%; height: 100%; }
+        canvas #firstperson { width: 100%; height: 100%; }
         a { color: white; }
         #info {
             position: absolute;
@@ -39,9 +39,10 @@
 
 <body scroll="no">
 <canvas id="firstperson" width="64" height="64" style="width: 640px; height: 640px; image-rendering: pixelated; margin: 0; padding: 0; display: block; z-index: 0;">Your browser does not support the canvas element.</canvas>
+
 <div id="top" style="position: absolute; display: block; top: 0px; right: 0px; z-index: 1;">
-<canvas id="voxels" width="512" height="512" style="width: 512px; height: 512px; image-rendering: pixelated; margin: 0; padding: 0; z-index: 9; display: block;"></canvas>
-<canvas id="cameraOverlay" width="512" height="512" style="width: 512px; height: 512px; margin: 0; padding: 0; z-index: 10; position: absolute; top: 0; left: 0; display: block;"></canvas>
+<canvas id="map" width="1024" height="1024" style="width: 1024px; height: 1024px; image-rendering: pixelated; margin: 0; padding: 0; z-index: 9; display: block;"></canvas>
+<canvas id="cameraOverlay" width="1024" height="1024" style="width: 1024px; height: 1024px; margin: 0; padding: 0; z-index: 10; display: block;"></canvas>
 </div>
 
 <div id="info" style="z-index: 2; margin: 0; padding: 0;">
