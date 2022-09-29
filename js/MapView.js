@@ -245,7 +245,7 @@ export default class MapView extends CanvasView
         //super.changeScale(this.canvasSamples, scale, scale);
         super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
         
-        super.changeElementDimensions(this.canvasSamples, scale, this.xRes, this.yRes);
+        //super.changeElementDimensions(this.canvasSamples, scale, this.xRes, this.yRes);
         super.changeStyleDimensions(this.canvasSamples.style, scale, this.xRes, this.yRes);
     }
 }
