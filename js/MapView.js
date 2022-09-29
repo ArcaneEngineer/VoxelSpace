@@ -7,7 +7,7 @@ import CanvasView from './CanvasView.js'
 
 const SAMPLE_RADIUS_MAX = 3;
 //top-down view of raycasted space
-export class MapView extends CanvasView
+export default class MapView extends CanvasView
 {
     imageData
     context
@@ -25,7 +25,11 @@ export class MapView extends CanvasView
     
     canvasCam
     
-    constructor(core)
+    toggled = false
+    
+    map = undefined
+    
+    constructor(core) //TODO should be one or the other - probably core.
     {
         super(core);
         this.initUI();
@@ -50,9 +54,10 @@ export class MapView extends CanvasView
         this.context = context;
         this.imageData = context.getImageData(0,0,xRes,yRes);
         
-        let scale = 0.5;
+        let scale = 0.25;
         this.changeScale(scale);
     }
+    
     
     update()
     {
@@ -60,6 +65,9 @@ export class MapView extends CanvasView
         let core = this.core;
         let canvas = this.canvas;
         let context = canvas.getContext('2d');
+        
+        let scale = core.toggled ? 1.00 : 0.25;
+        this.changeScale(scale);
         //context.fillStyle = "#000000";
         //context.fillRect(0, 0, canvas.width, canvas.height);
         /*

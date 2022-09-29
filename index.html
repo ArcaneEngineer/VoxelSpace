@@ -43,12 +43,12 @@
 <div id="top" style="position: absolute; display: block; top: 0px; right: 0px; z-index: 1;">
 <canvas id="map" width="1024" height="1024" style="width: 1024px; height: 1024px; image-rendering: pixelated; margin: 0; padding: 0; z-index: 9; display: block;"></canvas>
 <canvas id="cameraOverlay" width="1024" height="1024" style="width: 1024px; height: 1024px; margin: 0; padding: 0; z-index: 10; display: block;"></canvas>
+<input type="checkbox" style="position: absolute; display: block; top: 0px; right: 0px;" id="toggleMap" name="toggleMap" >
 </div>
 
-<div id="info" style="z-index: 2; margin: 0; padding: 0;">
+<div id="info" style="z-index: 2; margin: 0; padding: 0; width: 90%">
     <!--<p><b>WASD</b> or <b>Cursor Keys</b> or <b>left click</b> move, <b>R|F</b> up | down, <b>Q|E</b> pitch</p>-->
-    <div id="fps">
-    </div>
+
     <!--<br>-->
     <select name="Mapselector" size="1" onchange="LoadMap(this.value);" value="C1W;D1">
     <option value="C1W;D1">Map C1W</option>
@@ -105,6 +105,8 @@
     <input type="checkbox" id="perspective" name="perspective" checked>
 </div>
 
+<!-- <div id="fps" style="position: absolute; display: block; bottom: 0px; right: 0px;> -->
+<!-- </div> -->
 <script type="module" src="js/index.js"></script>
 
 </body>

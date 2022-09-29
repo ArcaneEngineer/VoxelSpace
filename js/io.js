@@ -1,6 +1,6 @@
 export default class Io
 {
-    //input = undefined
+    map = undefined
     camera = undefined
     time = undefined
     
@@ -28,8 +28,9 @@ export default class Io
         columnscale: undefined,
     }
     
-    constructor(camera, time, elementName)
+    constructor(map, camera, time, elementName)
     {
+        this.map = map;
         this.camera = camera;
         this.time = time;
         
@@ -61,6 +62,7 @@ export default class Io
         controls.nearWidth         = document.getElementById("nearWidth");
         controls.perspective       = document.getElementById("perspective");
         controls.rayStepAccl      = document.getElementById("rayStepAccl");
+        controls.toggleMap      = document.getElementById("toggleMap");
         
         controls.zNear.oninput = e => this.onChangezNear(e);
         controls.zFar .oninput = e => this.onChangezFar(e);
@@ -72,9 +74,11 @@ export default class Io
         controls.rayStepAccl.oninput = e => this.onChangeRayStepAccl(e);
         controls.columnscale.oninput = e => this.onChangeColumnScale(e);
         
+        controls.toggleMap.onchange = e => this.onToggleMap(e);
+        
         //controls.zFar .addEventListener("input", onzFarChanged);
         
-        //let canvas = this.canvas = document.getElementById("voxels");
+        //let canvas = this.canvas = document.getElementById("map");
         //this.fovGroup            = document.getElementById("fovGroup");
         //this.fovArc              = document.getElementById("fovArc");
         //let svg = this.svg       = document.getElementById("topVectors");
@@ -261,6 +265,13 @@ export default class Io
         //console.log(e);
         let camera = this.camera;
         camera.perspective = e.currentTarget.checked;
+    }
+    
+    onToggleMap(e)
+    {
+        let map = this.map;
+        map.toggled = e.currentTarget.checked;
+        //map.updateScale(); //would be more performant but worse structured.
     }
     
     onChangeRayStepAccl(e)

@@ -92,7 +92,7 @@ export default class RaycasterView extends CanvasView
             let fps = this.frames / (this.timeAccumulated * 0.001);
             
             //TODO cache instead of getElementById each time.
-            document.getElementById('fps').innerText = fps.toFixed(1) + " fps";
+            //document.getElementById('fps').innerText = fps.toFixed(1) + " fps";
             
             this.frames = 0;
             this.timeAccumulated = 0

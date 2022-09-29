@@ -1,6 +1,6 @@
 // import * as vec2 from '../utils/gl-matrix/vec2.js'
 // import * as vec3 from '../utils/gl-matrix/vec3.js'
-import {MapView} from './MapView.js'
+import MapView from './MapView.js'
 import RaycasterView from './RaycasterView.js'
 
 export default class RootView
@@ -9,12 +9,12 @@ export default class RootView
     map
     raycaster
     
-    constructor(core, raycaster)
+    constructor(core, raycaster, map)
     {
         this.core = core;
         
         this.raycaster = raycaster// new RaycasterView(core);
-        this.map = new MapView(core);
+        this.map = map
         
         this.initUI();
     }

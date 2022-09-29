@@ -9,6 +9,8 @@ export default class Map
     
     canvas = undefined
     
+    toggled = false //actually a view attribute.
+    
     constructor()
     {
         this.canvas = document.getElementById("map");//canvas;
