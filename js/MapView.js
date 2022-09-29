@@ -23,11 +23,12 @@ export default class MapView extends CanvasView
     // linesPool
     // circlesPool
     
-    canvasCam
+    canvasSamples
     
     toggled = false
     
     map = undefined
+    
     
     constructor(core) //TODO should be one or the other - probably core.
     {
@@ -42,7 +43,7 @@ export default class MapView extends CanvasView
         let yRes = this.yRes = 1024;//CONTROL_POINTS_ACROSS;
         
         let canvas = this.canvas = document.getElementById("map");
-        this.canvasCam           = document.getElementById("cameraOverlay");
+        this.canvasSamples       = document.getElementById("samples");
         
         /*
         this.fovGroup            = document.getElementById("fovGroup");
@@ -68,8 +69,14 @@ export default class MapView extends CanvasView
         
         let scale = core.toggled ? 1.00 : 0.25;
         this.changeScale(scale);
-        //context.fillStyle = "#000000";
-        //context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        
+        
+        
+        this.Flip();
+        
+        
+
         /*
         this.changeScale(core.scale);
         
@@ -80,6 +87,25 @@ export default class MapView extends CanvasView
         */
     }
     
+    Flip()
+    {
+        let core = this.core;
+        let canvas = this.canvasSamples;
+        let context = canvas.getContext('2d');
+        
+        //context.fillStyle = "#FFFFFF";
+        //context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        let imageData = context.getImageData(0,0,1024,1024);
+        // core.samples[0]    = 0xFFFFFFFF;
+        // core.samples[1]    = 0xFFFFFFFF;
+        // core.samples[1024] = 0xFFFFFFFF;
+        // core.samples[1025] = 0xFFFFFFFF;
+        imageData.data.set(core.samples8);
+        context.putImageData(imageData, 0, 0);
+    }
+    
+    
     
     updateLines()
     {
@@ -88,7 +114,7 @@ export default class MapView extends CanvasView
         let camPos = core.camera.pos;
         let colCount = core.rayCaster.colCount;
         let raysRotd = core.rayCaster.raysRotd;
-        let canvas = this.canvasCam;
+        let canvas = this.canvasSamples;
         let context = canvas.getContext('2d');
         let scale = core.scale;
         context.lineWidth = 1;
@@ -216,10 +242,10 @@ export default class MapView extends CanvasView
     changeScale(scale)
     {
         //super.changeScale(this.canvas, 1, scale);
-        //super.changeScale(this.canvasCam, scale, scale);
+        //super.changeScale(this.canvasSamples, scale, scale);
         super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
         
-        super.changeElementDimensions(this.canvasCam, scale, this.xRes, this.yRes);
-        super.changeStyleDimensions(this.canvasCam.style, scale, this.xRes, this.yRes);
+        super.changeElementDimensions(this.canvasSamples, scale, this.xRes, this.yRes);
+        super.changeStyleDimensions(this.canvasSamples.style, scale, this.xRes, this.yRes);
     }
 }

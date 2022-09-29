@@ -11,6 +11,11 @@ export default class Map
     
     toggled = false //actually a view attribute.
     
+    samplesbufarr = undefined
+    samples = undefined
+    storeSamples = true
+    
+    
     constructor()
     {
         this.canvas = document.getElementById("map");//canvas;
@@ -20,6 +25,11 @@ export default class Map
     
     Init()
     {
+        this.samplesbufarr = new ArrayBuffer(1024 * 1024 * 4);
+        this.samples = new Uint32Array (this.samplesbufarr);
+        this.samples8 = new Uint8Array (this.samplesbufarr);
+        console.log("len=", this.samples.length);
+        
         for (let i = 0; i < this.width * this.height; i++)
         {
             this.color[i] = 0xFF007050;

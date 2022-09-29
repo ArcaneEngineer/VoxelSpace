@@ -130,6 +130,8 @@ export default class RaycasterView extends CanvasView
         let mapaltitude = map.altitude;
         let mapcolor = map.color;
         let mapshift = map.shift;
+        let mapStoreSamples = map.storeSamples;
+        let mapSamples = map.samples;
         
         let screenwidth  = this.canvas.width|0;
         let screenheight = this.canvas.height;
@@ -137,6 +139,12 @@ export default class RaycasterView extends CanvasView
         let ymin = this.ymin;
         for (let x = 0; x < screenwidth; x++)
             ymin[x] = screenheight; //TODO OPTIMISE
+        
+        if (mapStoreSamples)
+        {
+            for (let i = 0; i < 1024 * 1024; i++)
+                mapSamples[i] = 0;
+        }
         
         // Render from front to back
         let camera = this.camera;
@@ -237,6 +245,8 @@ export default class RaycasterView extends CanvasView
             {
                 //map 1D coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                
+                mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 //https://web.archive.org/web/20050206144506/http://www.flipcode.com/articles/voxelland_part02.shtml
                 //the wave-surfing perspective projection formula:
                 //Ys = ( Yv - Ye ) * Yk / Z + Yc
@@ -260,6 +270,8 @@ export default class RaycasterView extends CanvasView
                 {
                     buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
                     offset        += flag * screenwidth; //increase for line above.
+                    
+                    
                 }
                 //...draw the vertical line segment.
                 

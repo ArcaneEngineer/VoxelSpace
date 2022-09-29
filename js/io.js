@@ -39,6 +39,10 @@ export default class Io
     
     Init(elementName)
     {
+        let camera = this.camera;
+        let map = this.map;
+        
+        
         let controls = this.controls;
         // set event handlers for keyboard, mouse, touchscreen and window resize
         let canvas = document.getElementById(elementName);
@@ -63,6 +67,9 @@ export default class Io
         controls.perspective       = document.getElementById("perspective");
         controls.rayStepAccl      = document.getElementById("rayStepAccl");
         controls.toggleMap      = document.getElementById("toggleMap");
+        
+        controls.zNear.value = camera.zNear;
+        controls.zFar.value = camera.zFar;
         
         controls.zNear.oninput = e => this.onChangezNear(e);
         controls.zFar .oninput = e => this.onChangezFar(e);

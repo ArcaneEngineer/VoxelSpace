@@ -11,10 +11,10 @@
         a { color: white; }
         #info {
             position: absolute;
-            top: 0px;
-            width: 100%;
+            bottom: 0px;
+            width: 25%;
             padding: 5px;
-            z-index:100;
+            z-index:2;
             color: white;
             font-family: "Arial", Times, serif;
             font-size: 120%;
@@ -34,22 +34,24 @@
         {
             user-select: none
         }
+        label
+        {
+            display: block;
+        }
     </style>
 </head>
 
 <body scroll="no">
 <canvas id="firstperson" width="64" height="64" style="width: 640px; height: 640px; image-rendering: pixelated; margin: 0; padding: 0; display: block; z-index: 0;">Your browser does not support the canvas element.</canvas>
 
-<div id="top" style="position: absolute; display: block; top: 0px; right: 0px; z-index: 1;">
-<canvas id="map" width="1024" height="1024" style="width: 1024px; height: 1024px; image-rendering: pixelated; margin: 0; padding: 0; z-index: 9; display: block;"></canvas>
-<canvas id="cameraOverlay" width="1024" height="1024" style="width: 1024px; height: 1024px; margin: 0; padding: 0; z-index: 10; display: block;"></canvas>
-<input type="checkbox" style="position: absolute; display: block; top: 0px; right: 0px;" id="toggleMap" name="toggleMap" >
+<div id="top" style="position: absolute; display: block; bottom: 0px; right: 0px; z-index: 1;">
+<canvas id="map"     width="1024" height="1024" style="width: 1024px; height: 1024px;  margin: 0; padding: 0; z-index: 9; display: block; position: absolute; bottom: 0px; right: 0px; image-rendering: pixelated;"></canvas>
+<canvas id="samples" width="1024" height="1024" style="width: 1024px; height: 1024px; margin: 0; padding: 0; z-index: 10; display: block; position: absolute; bottom: 0px; right: 0px; image-rendering: pixelated;"></canvas>
+<input type="checkbox" style="position: absolute; display: block; bottom: 0px; right: 0px; z-index: 11;" id="toggleMap" name="toggleMap" >
 </div>
 
-<div id="info" style="z-index: 2; margin: 0; padding: 0; width: 90%">
-    <!--<p><b>WASD</b> or <b>Cursor Keys</b> or <b>left click</b> move, <b>R|F</b> up | down, <b>Q|E</b> pitch</p>-->
+<div id="info">
 
-    <!--<br>-->
     <select name="Mapselector" size="1" onchange="LoadMap(this.value);" value="C1W;D1">
     <option value="C1W;D1">Map C1W</option>
     <option value="C2W;D2">Map C2W</option>
@@ -88,12 +90,7 @@
     <label for="zFar">zFar</label><input id="zFar" type="range" min="100" max="10000"value="10000" step="1">
 
     <label for="columnscale">columnscale</label><input id="columnscale" type="range" min="1" max="10" step="0.01">
-<!--
-    <label for="hFov">hFov</label><input id="hFov" type="range" min="0" max="3.141" value="0" step="0.01">
 
-    <label for="vFov">vFov</label><input id="vFov" type="range" min="0.000001" max="1.0" step="0.000001">
-
--->
     <label for="rayStepAccl">rayStepAccl</label><input id="rayStepAccl" type="range" min="0.001" max="1.0" value="0.01" step="0.001">
     
     <label for="heading">heading</label><input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001">
