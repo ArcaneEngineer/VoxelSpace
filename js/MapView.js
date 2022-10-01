@@ -24,6 +24,8 @@ export default class MapView extends CanvasView
     // circlesPool
     
     canvasSamples
+    imageDataSamples
+    contextSamples
     
     toggled = false
     
@@ -53,11 +55,13 @@ export default class MapView extends CanvasView
         let svg = this.svg       = document.getElementById("topVectors");
         */
         
-        let context = canvas.getContext("2d");
-        this.context = context;
-        this.imageData = context.getImageData(0,0,xRes,yRes);
+        this.context = this.canvas.getContext("2d");
+        this.imageData = this.context.getImageData(0,0,xRes,yRes);
         
-        let scale = 0.25;
+        this.contextSamples = this.canvasSamples.getContext("2d");
+        this.imageDataSamples = this.contextSamples.getImageData(0,0,1024,1024);
+        
+        let scale = 1;//0.25;
         this.changeScale(scale);
     }
     
@@ -66,17 +70,14 @@ export default class MapView extends CanvasView
     {
         //console.log("!")
         let core = this.core;
-        let canvas = this.canvas;
-        let context = canvas.getContext('2d');
-        
-        let scale = core.toggled ? 1.00 : 0.25;
-        this.changeScale(scale);
-        
-        this.containerDiv.style.opacity = core.opacity;
-        
-        
-        this.Flip();
-        
+        // let canvas = this.canvas;
+        // let context = canvas.getContext('2d');
+        // let scale = core.toggled ? 1.00 : 0.25;
+        // this.changeScale(scale);
+        // this.containerDiv.style.opacity = core.opacity;
+        let samples8 = core.samples8;
+        this.imageDataSamples.data.set(samples8);
+        this.contextSamples.putImageData(this.imageDataSamples, 0, 0);
         
 
         /*
@@ -88,26 +89,6 @@ export default class MapView extends CanvasView
         this.updateLines();
         */
     }
-    
-    Flip()
-    {
-        let core = this.core;
-        let canvas = this.canvasSamples;
-        let context = canvas.getContext('2d');
-        
-        //context.fillStyle = "#FFFFFF";
-        //context.fillRect(0, 0, canvas.width, canvas.height);
-        
-        let imageData = context.getImageData(0,0,1024,1024);
-        // core.samples[0]    = 0xFFFFFFFF;
-        // core.samples[1]    = 0xFFFFFFFF;
-        // core.samples[1024] = 0xFFFFFFFF;
-        // core.samples[1025] = 0xFFFFFFFF;
-        imageData.data.set(core.samples8);
-        context.putImageData(imageData, 0, 0);
-    }
-    
-    
     
     updateLines()
     {
