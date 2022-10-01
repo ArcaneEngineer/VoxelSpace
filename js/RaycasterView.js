@@ -197,7 +197,7 @@ export default class RaycasterView extends CanvasView
         //PERSPECTIVE - * z requires / w
         //ORTHO - neither, identity, z & w are 1
         
-        for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step
+        for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step / slice
         {
             //get float world space map coords we sample at L,R edges of screen,
             //at this current depth (z). (consider camera lateral arc from top)
@@ -241,7 +241,7 @@ export default class RaycasterView extends CanvasView
             let xStart = 0;
             let xEnd = screenwidth;
             
-            for (let x = xStart; x < xEnd; x++) //for each ray (screen space col)
+            for (let x = xStart; x < xEnd; x++) //for each ray across slice
             {
                 //map 1D coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
