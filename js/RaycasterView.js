@@ -344,12 +344,6 @@ export default class RaycasterView extends CanvasView
         let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
 
         let horizon = screenheight / 2;//camera.horizon|0;
-        //let ww = screenwidth; //PERSPECTIVE
-        //let ww = 1; //ORTHO
-        //let ww = perspective ? screenwidth //PERSPECTIVE
-        //                     : 1; //ORTHO
-        //let wwinv = 1. / ww;
-        let wwinv = 1. / screenwidth;
         
         //NOTE! implicit or explicit *1 projection plane distance!
         const zNearProj = 1.;
@@ -369,111 +363,57 @@ export default class RaycasterView extends CanvasView
         
         let dx = rx - lx;
         let dy = ry - ly;
-        //console.log("d=", dx, dy);
-        //console.log("c=", cx, cy, "l=", lx, ly, "r=", rx, ry);
         
-        //let fov = Math.atan(halfNearWidth / zNear); //DEBUG ONLY
-        //console.log("halfNearWidth=", halfNearWidth, "fov=", fov * 180. / Math.PI);
+        let xRes = screenwidth;
         
-        //PERSPECTIVE - * z requires / w
-        //ORTHO - neither, identity, z & w are 1
+        //fractional step
+        let sx = dx / xRes;
+        let sy = dy / xRes;
         
-                    
-        let xStart = 0;
-        let xEnd = screenwidth;
+        //what is the position on the near plane? (changes)
+        let raynearx = lx;
+        let rayneary = ly;
         
-        for (let x = xStart; x < xEnd; x++) //for each ray across slice
+        for (let x = 0; x < xRes; x++) //for each screen column
         {
-        
+            let z = 10;
+            
             for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step / slice
             {
-                //get float world space map coords we sample at L,R edges of screen,
-                //at this current depth (z). (consider camera lateral arc from top)
-                //90 degree FoV, as cos and sine are offset 90 degrees from each other?
-                //without *z, this describes unit circle. 
-                //Stepping between the two positions representing outer edges of screen,
-                //combined with increasing z, causes rays to diverge horizontally.
+                //forward step increment
+                let mapdx = raynearx * z;
+                let mapdy = rayneary * z;
                 
-                //let zz = z; //PERSPECTIVE
-                //let zz = 1//(z > zNear ? 1 : z); //ORTHO
-                //let zz = perspective ? z : 1;//(z > zNear ? 1 : z); //ORTHO
+                //2D map / world coords
+                let maplx = camx + mapdx;
+                let maply = camy + mapdy;
                 
-                //Sideways step increment (in camera's local x): scale d on its own
-                //(i.e. because then we're scaling it around its origin w/o campos)
-                //Q. why do we mul by z here?
-                //A. it's the original algorithm's way to create lateral perspective.
-                //world map x,y change as we advance along "layer" (in x); derived 
-                //from non-linear z as we move farther along the ray, so in z loop.
-                //
-                //Q. why do we divide by screenwidth here?
-                //A. because we need fractions of screenwidth each time we step in x
-                //   for the current ray depth. (1/screenwidth frac of screen)
-                //NOTE: * screenwidthinv; is slower: eliminates a JIT optimisation?
-                let mapdx = dx * z * wwinv// / ww;// / screenwidth;
-                let mapdy = dy * z * wwinv// / ww;// / screenwidth;
+                //1D map coords: cheap modulo wrap on x & y + upshift y.
+                let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
-                //forward step increment (actually start/left step per increasing x)
-                //world map coordinates (float)
-                //NOTE l,r MUST be the (small) values at near plane z=1 (ray start).
-                //Thus as we scale by increasing z, we get correct map-space pos,
-                //ortho or perspective. Thus lx / rx are pre-divided by screenwidth.
-                let maplx = camx + lx * z;
-                let maply = camy + ly * z;
+                //draw vertical....
+                let invz = (yk / z) * (screenheight / nearWidth);
+                let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
+                let ybot = ymin[x];
+                let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
+                ytop = ytop < 0 ? 0 : ytop;   
                 
-                //div-by-z causes rays to diverge vertically (no angles stored).
-                //let invzz = perspective ? screenheight / (z * nearWidth) : 1; //ORTHO
-                let invzz = screenheight / (z * nearWidth); //PERSPECTIVE
-                //let invzz = 1; //ORTHO
-                let invz = yk * invzz;
-
-                    //map 1D coords: cheap modulo wrap on x & y + upshift y.
-                    let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
-                    
-                    mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
-                    //https://web.archive.org/web/20050206144506/http://www.flipcode.com/articles/voxelland_part02.shtml
-                    //the wave-surfing perspective projection formula:
-                    //Ys = ( Yv - Ye ) * Yk / Z + Yc
-                    //...where:
-                    //Ys: coordinate projected onto the screen
-                    //Yv: altitude of the voxel column
-                    //Ye: coordinate of the eye
-                    //Z: distance from the eye to the considered point
-                    //Yk: constant to scale the projection, possibly negative
-                    //Yc: constant to centre the projection, usually half the screen resolution
-                    let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
-                    
-                    //draw the vertical line segment...
-                    let ybot = ymin[x];
-                    let flag = ytop <= ybot ? 1 : 0; // just <?
-                    ytop = ytop < 0 ? 0 : ytop;   
-                    
-                    // get offset on screen for the vertical line
-                    let offset = ytop * screenwidth + x; //init.
-                    for (let k = ytop; k < ybot; k++)
-                    {
-                        buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
-                        offset        += flag * screenwidth; //increase for line above.
-                    }
-                    //...draw the vertical line segment.
-                    
-                    //...This variable loop length is where the problem is for GPU.
-                    //Need to restrict it to warp or wavefront size, or multiple thereof
-                    //(32 or 64 "threads" / "runs of pixels" at a time.)
-                    //It just needs to do *nothing* after the loop would have completed.
-                    //e.g. by adding zero, or mul / div by 1.0.
-                    
-                    ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
-                    
-                    //interpolate (gradually "rasterise") between start and end map tile
-                    maplx += mapdx;
-                    maply += mapdy;
-                
-                //orthographic z delta from camera centre. i.e. regardless of heading
-                //of each ray off camera centre, its z stepping is the same,
-                //as in a sliced CT-scan style view (but perspective, not ortho).
-                deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
+                let offset = ytop * xRes + x; //1D index into screen buffer
+                for (let k = ytop; k < ybot; k++)
+                {
+                    buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
+                    offset        += flag * xRes; //increase for line above.
+                }
+                ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
+                //...draw the vertical line segment.
             }
-        
+            
+            //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
+            raynearx += sx;
+            rayneary += sy;
+            
+            deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
         }
     }
 }

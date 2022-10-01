@@ -68,11 +68,10 @@ export default class MapView extends CanvasView
     {
         //console.log("!")
         let core = this.core;
-        // let canvas = this.canvas;
-        // let context = canvas.getContext('2d');
-        // let scale = core.toggled ? 1.00 : 0.25;
-        // this.changeScale(scale);
-        // this.containerDiv.style.opacity = core.opacity;
+        let scale = core.toggled ? 1.00 : 0.25;
+        this.changeScale(scale);
+        this.containerDiv.style.opacity = core.opacity;
+        
         let samples8 = core.samples8;
         this.imageDataSamples.data.set(samples8);
         this.contextSamples.putImageData(this.imageDataSamples, 0, 0);
