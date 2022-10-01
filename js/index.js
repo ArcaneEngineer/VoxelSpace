@@ -5,6 +5,7 @@ import Io from './Io.js';
 import Time from './Time.js';
 import RootView from './RootView.js';
 import RaycasterView from './RaycasterView.js';
+import SilvermanView from './SilvermanView.js';
 import MapView from './MapView.js';
 import Camera from './Camera.js';
 
@@ -17,6 +18,7 @@ var map = undefined;
 var io = undefined;
 var rootView = undefined;
 var raycasterView = undefined;
+var silvermanView = undefined;
 var mapView = undefined;
 var camera = undefined;
 
@@ -28,8 +30,9 @@ function Init()
     camera = new Camera();
     io = new Io(map, camera, time, "firstperson"); //TODO camera should not be in here, declare in Raycaster
     raycasterView = new RaycasterView(camera, map, io, time, fpsTime, "firstperson");
+    silvermanView = new SilvermanView(camera, map, io, time, fpsTime, "firstperson");
     mapView = new MapView(map);
-    rootView = new RootView(null, raycasterView, mapView);
+    rootView = new RootView(null, raycasterView, silvermanView, mapView);
     window.onresize = e => rootView.OnResizeWindow(e); rootView.OnResizeWindow(); //kicks off rendering.
 }
 

@@ -61,7 +61,7 @@ export default class MapView extends CanvasView
         this.contextSamples = this.canvasSamples.getContext("2d");
         this.imageDataSamples = this.contextSamples.getImageData(0,0,1024,1024);
         
-        let scale = 1;//0.25;
+        let scale = 0.25;
         this.changeScale(scale);
     }
     
