@@ -27,8 +27,6 @@ export default class MapView extends CanvasView
     imageDataSamples
     contextSamples
     
-    toggled = false
-    
     map = undefined
     
     containerDiv = undefined;
@@ -92,7 +90,6 @@ export default class MapView extends CanvasView
     
     updateLines()
     {
-        
         let core = this.core;
         let camPos = core.camera.pos;
         let colCount = core.rayCaster.colCount;

@@ -7,14 +7,17 @@ export default class Map
     altitude = new Uint8Array (1024*1024) // 1024 * 1024 byte array: heights
     color    = new Uint32Array(1024*1024) // 1024 * 1024 int array: RGB colors
     
-    canvas = undefined
     
-    toggled = false //actually a view attribute.
-    opacity = 1.0 //actually a view attribute.
+    //view related
+    canvas = undefined
     
     samplesbufarr = undefined
     samples = undefined
     storeSamples = true
+    
+    toggled = false //map view
+    opacity = 1.0 //map view
+    
     
     
     constructor()

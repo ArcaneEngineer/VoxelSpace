@@ -3,6 +3,7 @@ export default class Io
     map = undefined
     camera = undefined
     time = undefined
+    gameCore = undefined
     
     forwardbackward= 0
     leftrightturn  = 0
@@ -28,10 +29,11 @@ export default class Io
         columnscale: undefined,
     }
     
-    constructor(map, camera, time, elementName)
+    constructor(gameCore, time, elementName)
     {
-        this.map = map;
-        this.camera = camera;
+        this.gameCore = gameCore
+        this.map = gameCore.map;
+        this.camera = gameCore.camera;
         this.time = time;
         
         this.Init(elementName);
@@ -68,8 +70,7 @@ export default class Io
         controls.rayStepAccl      = document.getElementById("rayStepAccl");
         controls.toggleMap      = document.getElementById("toggleMap");
         controls.mapOpacity = document.getElementById("mapOpacity");
-        
-        
+        controls.toggleRenderer = document.getElementById("toggleRenderer");
         
         controls.zNear.value = camera.zNear;
         controls.zFar.value = camera.zFar;
@@ -85,6 +86,7 @@ export default class Io
         controls.columnscale.oninput = e => this.onChangeColumnScale(e);
         
         controls.toggleMap.onchange = e => this.onToggleMap(e);
+        controls.toggleRenderer.onchange = e => this.onToggleRenderer(e);
         
         controls.mapOpacity.oninput = e => this.onChangeMapOpacity(e);
         
@@ -279,13 +281,6 @@ export default class Io
         camera.perspective = e.currentTarget.checked;
     }
     
-    onToggleMap(e)
-    {
-        let map = this.map;
-        map.toggled = e.currentTarget.checked;
-        //map.updateScale(); //would be more performant but worse structured.
-    }
-    
     onChangeRayStepAccl(e)
     {
         let camera = this.camera;
@@ -298,10 +293,21 @@ export default class Io
         camera.columnscale = e.currentTarget.valueAsNumber;
     }
     
+    onToggleMap(e)
+    {
+        this.gameCore.map.toggled = e.currentTarget.checked;
+        //map.updateScale(); //would be more performant but worse structured.
+    }
+    
     onChangeMapOpacity(e)
     {
-        let map = this.map;
-        map.opacity = e.currentTarget.valueAsNumber;
+        this.gameCore.map.opacity = e.currentTarget.valueAsNumber;
+    }
+    
+    onToggleRenderer(e)
+    {
+        this.gameCore.renderNovalogic = e.currentTarget.checked;
+        //map.updateScale(); //would be more performant but worse structured.
     }
     
     // Update the camera for next frame. Dependent on keypresses
