@@ -376,8 +376,6 @@ export default class RaycasterView extends CanvasView
         
         for (let x = 0; x < xRes; x++) //for each screen column
         {
-            let z = 10;
-            
             for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step / slice
             {
                 //forward step increment
@@ -413,7 +411,7 @@ export default class RaycasterView extends CanvasView
             raynearx += sx;
             rayneary += sy;
             
-            deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
+            //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
         }
     }
 }
