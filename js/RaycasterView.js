@@ -18,14 +18,15 @@ export default class RaycasterView extends CanvasView
     updaterunning = false
     backgroundcolor = 0xFF00A0F0 //BGR
     
-    constructor(camera, map, io, time, fpsTime, elementName)
+    constructor(io, //time, 
+                fpsTime, elementName)
     {
         super(undefined);
         
-        this.camera = camera;
-        this.map = map;
+        //this.camera = camera;
+        //this.map = map;
         this.io = io;
-        this.time = time;
+        //this.time = time;
         this.fpsTime = fpsTime;
         
         this.elementName = elementName;
@@ -75,19 +76,16 @@ export default class RaycasterView extends CanvasView
     
     timeAccumulated = 0
     
-    update(renderNovalogic)
+    update(camera, map, renderNovalogic)
     {
         this.updaterunning = true;
-        //console.log(this);
-        this.time.updateDelta();
-        this.io.UpdateCamera();
         
         this.RenderBackground();
         
         if (renderNovalogic)
-            this.RenderTerrainNovalogic();
+            this.RenderTerrainNovalogic(camera, map);
         else
-            this.RenderTerrainSilverman();
+            this.RenderTerrainSilverman(camera, map);
         
         this.Flip();
         
@@ -123,13 +121,12 @@ export default class RaycasterView extends CanvasView
         for (let i = 0; i < buf32.length; i++) buf32[i] = backgroundcolor|0;
     }
     
-    RenderTerrainNovalogic()
+    RenderTerrainNovalogic(camera, map)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
         let buf32 = this.buf32;
                 
-        let map = this.map;
         let mapwidthperiod  = map.width - 1;
         let mapheightperiod = map.height - 1;
         let mapaltitude = map.altitude;
@@ -152,7 +149,6 @@ export default class RaycasterView extends CanvasView
         }
         
         // Render from front to back
-        let camera = this.camera;
         let height = camera.height;
         let camx = camera.x;
         let camy = camera.y;
@@ -314,13 +310,12 @@ export default class RaycasterView extends CanvasView
 // -silverman planes radial
 //--https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
     
-    RenderTerrainSilverman()
+    RenderTerrainSilverman(camera, map)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
         let buf32 = this.buf32;
                 
-        let map = this.map;
         let mapwidthperiod  = map.width - 1;
         let mapheightperiod = map.height - 1;
         let mapaltitude = map.altitude;
@@ -343,7 +338,6 @@ export default class RaycasterView extends CanvasView
         }
         
         // Render from front to back
-        let camera = this.camera;
         let height = camera.height;
         let camx = camera.x;
         let camy = camera.y;

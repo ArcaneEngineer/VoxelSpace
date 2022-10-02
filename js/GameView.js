@@ -8,13 +8,22 @@ export default class GameView
     //sub-views
     map
     raycaster
+    raycasterWorker = undefined
     
-    constructor(core, raycaster, map)
+    time
+    io
+    
+    constructor(core, raycaster, map, time, io)
     {
         this.core = core;
         
+        //sub-views
         this.raycaster = raycaster// new RaycasterView(core);
         this.map = map
+        this.time = time
+        this.io = io
+        
+        this.raycasterWorker = new Worker('./js/RaycasterWorker.js');
         
         this.initUI();
     }
@@ -30,10 +39,16 @@ export default class GameView
     {
         let core = this.core;
         //console.log("?")
-        //TODO as list?
+        
+        this.time.updateDelta();
+        this.io.UpdateCamera();
+        
+        //TODO process subviews as list?
         this.map.update();
         
-        this.raycaster.update(core.renderNovalogic);
+        this.raycaster.update(core.camera, core.map, core.renderNovalogic);
+        
+        this.raycasterWorker.postMessage("From GameView With Love");
         
         //window.requestAnimationFrame(e => this.update(e), 0);
         window.requestAnimationFrame(this.update.bind(this), 0);
