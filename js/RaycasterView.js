@@ -308,9 +308,8 @@ export default class RaycasterView extends CanvasView
 // -silverman DDA-based casting
 // -adjustible multiplier for ray stepping
 // -render to tex via fragment shader, sending minimal data (1B per?)
-// -work on only a +-1MiB array in the Render* functions, these are color index
-//  arrays which are thereafter converted to full 4MiB RGBA arrays.
-//  should avoid many cache misses between L2 and L3.
+// -work on only +-1MiB color index array in the Render* functions, which are
+//  later converted to full 4MiB RGBA arrays.(reduce cache misses L2<->L3.)
 //    https://web.dev/drawing-to-canvas-in-emscripten/
 // -silverman planes radial
 //--https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
