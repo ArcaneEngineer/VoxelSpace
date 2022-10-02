@@ -299,6 +299,22 @@ export default class RaycasterView extends CanvasView
         }
     }
     
+//TODO
+
+// -Render working thread + OffscreenCanvas
+// --row major to col major for better locality during ray walk
+// --SIMD inclusions? Requires C. https://v8.dev/features/simd
+// -RLE cubes
+// -silverman DDA-based casting
+// -adjustible multiplier for ray stepping
+// -render to tex via fragment shader, sending minimal data (1B per?)
+// -work on only a +-1MiB array in the Render* functions, these are color index
+//  arrays which are thereafter converted to full 4MiB RGBA arrays.
+//  should avoid many cache misses between L2 and L3.
+//    https://web.dev/drawing-to-canvas-in-emscripten/
+// -silverman planes radial
+//--https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
+    
     RenderTerrainSilverman()
     {
         let backgroundcolor = this.backgroundcolor;
@@ -409,6 +425,10 @@ export default class RaycasterView extends CanvasView
                 for (let k = ytop; k < ybot; k++)
                 {
                     buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
+                    
+                    //TODO fix this horrific offsetting by whole screenwidth to +1;
+                    //     done by flipping to column major image format and render
+                    //     to a rotated OpenGL texture. (also change offset init)
                     offset        += flag * xRes; //increase for line above.
                 }
                 ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
@@ -422,5 +442,61 @@ export default class RaycasterView extends CanvasView
             raynearx += sx;
             rayneary += sy;
         }
+        
+        
+        
+        //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+        
     }
+    
+    //https://stackoverflow.com/questions/8936183/bresenham-lines-w-o-diagonal-movement
+    //https://stackoverflow.com/questions/35422997/understanding-bresenhams-error-accumulation-part-of-the-algorithm
+    lineNoDiag(x0, y0, x1, y1, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift)
+    {
+        //what about a fractional start pos? we will need to test moving camera
+        //in tiny increments.
+        //it won't support that by default as this is an all-integer implementation.
+        //we'll need to floatify it (no) or use fixed point integer values.
+        
+        let xDist =  Math.abs(x1 - x0);
+        let yDist = -Math.abs(y1 - y0);
+        let xStep = (x0 < x1 ? +1 : -1);
+        let yStep = (y0 < y1 ? +1 : -1);
+        let error = xDist + yDist;
+
+        this.plot(x0, y0, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+
+        while (x0 != x1 || y0 != y1)
+        {
+            if (2*error - yDist > xDist - 2*error)
+            {
+                // horizontal step
+                error += yDist;
+                x0 += xStep;
+            }
+            else
+            {
+                // vertical step
+                error += xDist;
+                y0 += yStep;
+            }
+
+            this.plot(x0, y0, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+        }
+    }
+
+
+    plot(mapdx, mapdy, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift)
+    {
+        //DEV
+            
+        let maplx = camx + mapdx;
+        let maply = camy + mapdy;
+        
+        //1D map coords: cheap modulo wrap on x & y + upshift y.
+        let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+        
+        mapSamples[mapoffset] = 0xFFFFFFFF;
+    }
+    
 }
