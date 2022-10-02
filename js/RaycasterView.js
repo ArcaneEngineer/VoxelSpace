@@ -374,13 +374,21 @@ export default class RaycasterView extends CanvasView
         let raynearx = lx;
         let rayneary = ly;
         
+        let rayStepJolt = 0.1;
+        
         for (let x = 0; x < xRes; x++) //for each screen column
         {
-            for (let z = zNearClip; z < zFarClip; z += deltaz) //for each ray step / slice
+            // deltaz = 1.0;
+            // rayStepAccl = 0.1;
+            let a = 0.5;
+            for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
             {
+                let zz = z// * z; 
+                zz = zz > zFarClip ? zFarClip : zz;
+                
                 //forward step increment
-                let mapdx = raynearx * z;
-                let mapdy = rayneary * z;
+                let mapdx = raynearx * zz;
+                let mapdy = rayneary * zz;
                 
                 //2D map / world coords
                 let maplx = camx + mapdx;
@@ -391,7 +399,7 @@ export default class RaycasterView extends CanvasView
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
                 //draw vertical....
-                let invz = (yk / z) * (screenheight / nearWidth);
+                let invz = (yk / zz) * (screenheight / nearWidth);
                 let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
                 let ybot = ymin[x];
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
@@ -405,13 +413,14 @@ export default class RaycasterView extends CanvasView
                 }
                 ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
                 //...draw the vertical line segment.
+                
+                //rayStepAccl += rayStepJolt;
+                //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
             }
             
             //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
             raynearx += sx;
             rayneary += sy;
-            
-            //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
         }
     }
 }
