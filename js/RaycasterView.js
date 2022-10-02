@@ -2,15 +2,10 @@ import CanvasView from './CanvasView.js';
 
 export default class RaycasterView extends CanvasView
 {
-    camera    = undefined
-    map       = undefined
-    io        = undefined //maybe move up and out, only used once for updating camera
-    
     bufarray  = undefined // color data
     buf8      = undefined // the same array but with bytes
     buf32     = undefined // the same array but with 32-Bit words
     
-    time = undefined
     fpsTime = undefined
     
     frames = 0
@@ -18,15 +13,10 @@ export default class RaycasterView extends CanvasView
     updaterunning = false
     backgroundcolor = 0xFF00A0F0 //BGR
     
-    constructor(io, //time, 
-                fpsTime, elementName)
+    constructor(fpsTime, elementName)
     {
         super(undefined);
         
-        //this.camera = camera;
-        //this.map = map;
-        this.io = io;
-        //this.time = time;
         this.fpsTime = fpsTime;
         
         this.elementName = elementName;

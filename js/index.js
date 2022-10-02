@@ -32,8 +32,7 @@ function Init()
     camera = new Camera();
     gameCore = new GameCore(camera, map);
     io = new Io(gameCore, time, "firstperson"); //TODO camera should not be in here, declare in Raycaster
-    raycasterView = new RaycasterView(io, //time, 
-                                        fpsTime, "firstperson");
+    raycasterView = new RaycasterView(fpsTime, "firstperson");
     mapView = new MapView(map);
     gameView = new GameView(gameCore, raycasterView, mapView, time, io);
     window.onresize = e => gameView.OnResizeWindow(e); gameView.OnResizeWindow(); //kicks off rendering.
