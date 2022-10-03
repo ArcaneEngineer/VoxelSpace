@@ -1,9 +1,9 @@
-//import RaycasterView from './RaycasterView.js'
-importScripts('./js/RaycasterView.js')
+//importScripts('RaycasterView.js')
+//importScripts('Camera.js')
 
 //var a = {test: 'boo'};
 
-const raycaster = new 
+//const raycaster = new 
 
 onmessage = (evt) =>
 {

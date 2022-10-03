@@ -1,4 +1,5 @@
 import CanvasView from './CanvasView.js';
+import Time from './Time.js';
 
 export default class RaycasterView extends CanvasView
 {
@@ -13,33 +14,34 @@ export default class RaycasterView extends CanvasView
     updaterunning = false
     backgroundcolor = 0xFF00A0F0 //BGR
     
-    constructor(fpsTime, elementName)
+    constructor()//elementName)
     {
         super(undefined);
         
-        this.fpsTime = fpsTime;
+        this.fpsTime = new Time();
         
-        this.elementName = elementName;
+        //this.elementName = elementName;
     }
     
     changeScale(scale)
     {
         //super.changeScale(this.canvas, 1, scale); 
         //...cannot change the canvas size, only the style size, or it clears!
-        super.changeElementDimensions(this.canvas, 1, this.xRes, this.yRes);
-        super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
+        //super.changeElementDimensions(this.canvas, 1, this.xRes, this.yRes);
+        //super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
     }
     
-    initUI()
+    initUI(canvas, screenwidth, screenheight)
     {
+        console.log(canvas);
         //OLD
-        let aspect = window.innerWidth / window.innerHeight;
-        let canvas = this.canvas = document.getElementById(this.elementName);
-        
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = this.canvas.width / aspect;
-        let xRes = this.xRes = this.canvas.width;//core.rayCaster.colCount;
-        let yRes = this.yRes = this.canvas.height;//core.rayCaster.rowCount;
+        let aspect = screenwidth / screenheight; //window.innerWidth / window.innerHeight;
+        //let canvas = this.canvas = document.getElementById(this.elementName);
+        this.canvas = canvas;
+        canvas.width = window.innerWidth;
+        canvas.height = canvas.width / aspect;
+        let xRes = this.xRes = canvas.width;//core.rayCaster.colCount;
+        let yRes = this.yRes = canvas.height;//core.rayCaster.rowCount;
         console.log(xRes, yRes);
         //let core = this.core;
         this.changeScale(1);//core.scale);
@@ -47,8 +49,8 @@ export default class RaycasterView extends CanvasView
         //OLD
         //if (this.canvas.getContext)
         //{
-        this.context   = this.canvas.getContext("2d");
-        this.imagedata = this.context.createImageData(this.canvas.width, this.canvas.height);
+        this.context   = canvas.getContext("2d");
+        this.imagedata = this.context.createImageData(canvas.width, canvas.height);
         //this.imageData = this.context.getImageData(0,0,xRes,yRes);
         //}
 
@@ -59,23 +61,23 @@ export default class RaycasterView extends CanvasView
         this.ymin = new Int32Array(this.canvas.width);
     }
 
-    OnResizeWindow()
+    OnResizeWindow(canvas, screenwidth, screenheight)
     {
-        this.initUI(this.elementName);
+        this.initUI(canvas, screenwidth, screenheight);
     }
     
     timeAccumulated = 0
     
-    update(camera, map, renderNovalogic)
+    update(camera, map, screenwidth, screenheight, renderNovalogic)
     {
         this.updaterunning = true;
         
         this.RenderBackground();
         
         if (renderNovalogic)
-            this.RenderTerrainNovalogic(camera, map);
+            this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas);
         else
-            this.RenderTerrainSilverman(camera, map);
+            this.RenderTerrainSilverman(camera, map, screenwidth, screenheight, this.canvas);
         
         this.Flip();
         
@@ -111,7 +113,7 @@ export default class RaycasterView extends CanvasView
         for (let i = 0; i < buf32.length; i++) buf32[i] = backgroundcolor|0;
     }
     
-    RenderTerrainNovalogic(camera, map)
+    RenderTerrainNovalogic(camera, map, screenwidth, screenheight)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
@@ -125,8 +127,8 @@ export default class RaycasterView extends CanvasView
         let mapStoreSamples = map.storeSamples;
         let mapSamples = map.samples;
         
-        let screenwidth  = this.canvas.width|0;
-        let screenheight = this.canvas.height;
+        //let screenwidth  = this.canvas.width|0;
+        //let screenheight = this.canvas.height;
         
         let ymin = this.ymin;
         for (let x = 0; x < screenwidth; x++)
@@ -300,7 +302,7 @@ export default class RaycasterView extends CanvasView
 // -silverman planes radial
 //--https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
     
-    RenderTerrainSilverman(camera, map)
+    RenderTerrainSilverman(camera, map, screenwidth, screenheight)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
@@ -314,8 +316,8 @@ export default class RaycasterView extends CanvasView
         let mapStoreSamples = map.storeSamples;
         let mapSamples = map.samples;
         
-        let screenwidth  = this.canvas.width|0;
-        let screenheight = this.canvas.height;
+        //let screenwidth  = this.canvas.width|0;
+        //let screenheight = this.canvas.height;
         
         let ymin = this.ymin;
         for (let x = 0; x < screenwidth; x++)

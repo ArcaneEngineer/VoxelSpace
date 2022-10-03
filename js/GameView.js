@@ -5,6 +5,8 @@ import RaycasterView from './RaycasterView.js'
 
 export default class GameView
 {
+    core = undefined //remove if extends another view class!
+    
     //sub-views
     map
     raycaster
@@ -18,7 +20,7 @@ export default class GameView
         this.core = core;
         
         //sub-views
-        this.raycaster = raycaster// new RaycasterView(core);
+        this.raycaster = raycaster//
         this.map = map
         this.time = time
         this.io = io
@@ -32,7 +34,7 @@ export default class GameView
     {
         //window.addEventListener("resize", this.resize.bind(this), false);
         //this.resize();
-        let core = this.core;
+        //let core = this.core;
     }
     
     update()//timeSec, deltaSec)
@@ -46,9 +48,9 @@ export default class GameView
         //TODO process subviews as list?
         this.map.update();
         
-        this.raycaster.update(core.camera, core.map, core.renderNovalogic);
+        this.raycaster.update(core.camera, core.map, core.screenwidth, core.screenheight, core.renderNovalogic);
         
-        this.raycasterWorker.postMessage("From GameView With Love");
+        //this.raycasterWorker.postMessage(core);
         
         //window.requestAnimationFrame(e => this.update(e), 0);
         window.requestAnimationFrame(this.update.bind(this), 0);
@@ -59,9 +61,16 @@ export default class GameView
         //this.renderer.setSize(window.innerWidth, window.innerHeight);
         //this.camera.perspective({aspect: this.gl.canvas.width / this.gl.canvas.height});
         
+        let core = this.core;
+        core.screenwidth = window.innerWidth;
+        core.screenheight = window.innerHeight;
+        
+        const canvas = document.getElementById("firstperson");
+        const offscreenCanvas = canvas.transferControlToOffscreen();
+        console.log(canvas);
+        console.log(offscreenCanvas);
         //TODO process all subviews generically from array
-        this.raycaster.OnResizeWindow(e);
-        //this.silverman.OnResizeWindow(e);
+        this.raycaster.OnResizeWindow(offscreenCanvas, core.screenwidth, core.screenheight);
         
         this.update(); //gets the update loop rolling.
     }
