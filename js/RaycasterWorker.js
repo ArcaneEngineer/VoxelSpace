@@ -12,7 +12,8 @@ onmessage = (evt) =>
 {   
     let typey = evt.data.typey;
     let camera = evt.data.camera;
-    let map = evt.data.map;
+    let mapIn = evt.data.map;
+    let renderNovalogic = evt.data.renderNovalogic;
     
     // if (updateCount < 1)
     // {
@@ -28,13 +29,13 @@ onmessage = (evt) =>
         case "update":
             //this *is* the update; requestAnimationFrame will take it from here,
             //updating at the right time *according* to this current dataset.
-            if (map != null)
+            if (mapIn != null)
             {
-                raycaster.map = map;
-            
-            
+                raycaster.map = mapIn;
             }
+            
             raycaster.camera = camera;
+            raycaster.renderNovalogic = renderNovalogic;
             
             if (!animating) //prevent multiple requestAnimationFrame schedulings!
             {

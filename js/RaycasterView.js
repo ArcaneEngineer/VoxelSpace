@@ -18,49 +18,25 @@ class RaycasterView// extends CanvasView
     camera = undefined
     map = undefined
    
+    renderNovalogic = false
     
-    constructor(fpsTime)//elementName)
+    constructor(fpsTime)
     {
         this.fpsTime = fpsTime;
-        //super(undefined);
-        
         //this.fpsTime = new Time();
         
-        //this.elementName = elementName;
         console.log("RAycasterView ctor");
-    }
-    
-    changeScale(scale)
-    {
-        //super.changeScale(this.canvas, 1, scale); 
-        //...cannot change the canvas size, only the style size, or it clears!
-        //super.changeElementDimensions(this.canvas, 1, this.xRes, this.yRes);
-        //super.changeStyleDimensions(this.canvas.style, scale, this.xRes, this.yRes);
     }
     
     OnResizeWindow(canvas, screenwidth, screenheight)
     {
         console.log("RaycasterView.OnResizeWindow");
-        //console.log(canvas);
-        //OLD
-        //let aspect = screenwidth / screenheight; //window.innerWidth / window.innerHeight;
-        //let canvas = this.canvas //= document.getElementById(this.elementName);
-        // canvas.width = screenwidth//window.innerWidth;
-        // canvas.height = screenheight//canvas.width / aspect;
 
         let xRes = this.xRes = screenwidth //canvas.width;//core.rayCaster.colCount;
         let yRes = this.yRes = screenheight//canvas.height;//core.rayCaster.rowCount;
-        //console.log(xRes, yRes);
-        //let core = this.core;
-        this.changeScale(1);//core.scale);
         
-        //OLD
-        //if (this.canvas.getContext)
-        //{
         this.context   = canvas.getContext("2d");
         this.imagedata = this.context.createImageData(screenwidth, screenheight);
-        //this.imageData = this.context.getImageData(0,0,xRes,yRes);
-        //}
 
         this.bufarray = new ArrayBuffer(screenwidth * screenheight * 4);
         this.buf8     = new Uint8Array (this.bufarray);
@@ -68,16 +44,9 @@ class RaycasterView// extends CanvasView
         
         this.ymin = new Int32Array(screenwidth);
     }
-    /*
-    OnResizeWindow(canvas, screenwidth, screenheight)
-    {
-        this.initUI(canvas, screenwidth, screenheight);
-    }
-    */
     
-    update()//camera, map, screenwidth, screenheight, renderNovalogic)
+    update()
     {
-        //console.log("!");
         this.updaterunning = true;
         
         this.RenderBackground();
@@ -88,7 +57,7 @@ class RaycasterView// extends CanvasView
         let screenwidth = camera.screenwidth;
         let screenheight = camera.screenheight;
         
-        if (false)//core.renderNovalogic)
+        if (this.renderNovalogic)
             this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas);
         else
             this.RenderTerrainSilverman(camera, map, screenwidth, screenheight, this.canvas);
@@ -111,9 +80,6 @@ class RaycasterView// extends CanvasView
         this.timeAccumulated += this.fpsTime.delta;
         //console.log(this.timeAccumulated);
         */
-        
-        //requestAnimationFrame(this.update.bind(this, camera, map, screenwidth, screenheight, core.renderNovalogic), 0);
-        requestAnimationFrame(() => this.update(), 0);
     }
     
     // Show the back buffer on screen
@@ -121,6 +87,9 @@ class RaycasterView// extends CanvasView
     {
         this.imagedata.data.set(this.buf8);
         this.context.putImageData(this.imagedata, 0, 0);
+        
+        //requestAnimationFrame(this.update.bind(this), 0);
+        requestAnimationFrame(() => this.update(), 0);
     }
     
     RenderBackground()

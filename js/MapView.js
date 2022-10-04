@@ -66,7 +66,6 @@ export default class MapView extends CanvasView
     
     update()
     {
-        //console.log("!")
         let core = this.core;
         let scale = core.toggled ? 1.00 : 0.25;
         this.changeScale(scale);

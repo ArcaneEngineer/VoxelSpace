@@ -7,9 +7,7 @@ export default class Map
     altitude = new Uint8Array (1024*1024) // 1024 * 1024 byte array: heights
     color    = new Uint32Array(1024*1024) // 1024 * 1024 int array: RGB colors
     
-    
     //view related
-    //canvas = undefined
     
     samplesbufarr = undefined
     samples = undefined
@@ -18,12 +16,8 @@ export default class Map
     toggled = false //map view
     opacity = 1.0 //map view
     
-    
-    
     constructor()
     {
-        //this.canvas = document.getElementById("map");//canvas;
-        //console.log ("canv="+this.canvas);
         this.Init();
     }
     
@@ -45,7 +39,6 @@ export default class Map
     {
         let files = filenames.split(";");
         let urls = ["maps/"+files[0]+".png", "maps/"+files[1]+".png"];
-        //this.DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(result => this.OnLoadedImages(result) );
         
         return new Promise(function(resolve, reject)
         {
@@ -76,7 +69,7 @@ export default class Map
     }
     
     //Once the chosen image pair (color, height) is loaded...
-    OnLoadedImages(result)
+    OnLoadedColorHeightPair(result)
     {
         var datac = result[0].data;
         var datah = result[1].data;
@@ -90,6 +83,6 @@ export default class Map
         let context = canvas.getContext("2d");
         context.putImageData(result[0], 0, 0);
         
-        console.log("LOADED IMAGES", result);
+        console.log("LOADED COLOR & HEIGHT IMAGES", result);
     }
 }

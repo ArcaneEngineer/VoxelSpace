@@ -1,5 +1,3 @@
-// import * as vec2 from '../utils/gl-matrix/vec2.js'
-// import * as vec3 from '../utils/gl-matrix/vec3.js'
 import MapView from './MapView.js'
 //import RaycasterView from './RaycasterView.js'
 
@@ -24,17 +22,6 @@ export default class GameView
         this.map = map
         this.time = time
         this.io = io
-        
-
-        
-        this.initUI();
-    }
-    
-    initUI()
-    {
-        //window.addEventListener("resize", this.resize.bind(this), false);
-        //this.resize();
-        //let core = this.core;
     }
     
     started = 0
@@ -42,7 +29,6 @@ export default class GameView
     update()//timeSec, deltaSec)
     {
         let core = this.core;
-        //console.log("???", this.started)
         let camera = core.camera;
         let map = core.map;
         
@@ -52,10 +38,9 @@ export default class GameView
         //TODO process subviews as list?
         this.map.update();
         
-        //this.raycaster.update(core.camera, core.map, core.screenwidth, core.screenheight, core.renderNovalogic);
-        
+        //this.raycaster.update();
+        //TODO remove "started" in favour of "updated" when we have our generated map data model.
         this.raycasterWorker.postMessage({typey: "update", camera: camera, map: this.started ? null : map, renderNovalogic: core.renderNovalogic});
-        //this.raycasterWorker.postMessage({typey: "update", core: this.started ? null : core});
         this.started++;
         
         //window.requestAnimationFrame(e => this.update(e), 0);
@@ -74,6 +59,7 @@ export default class GameView
         camera.screenheight = window.innerHeight;
         let map = core.map;
         
+        //TODO make it possible to resize once again...
         //"So it turns out that the only solution to this was cloning the canvas, replacing it in the DOM with its own clone, and then using transferControlToOffscreen on the clone"
         //from https://stackoverflow.com/questions/46546066/reattach-the-canvas-context-after-using-transfercontroltooffscreen
         const canvas = document.getElementById("firstperson");
@@ -93,26 +79,26 @@ export default class GameView
         this.update(); //gets the update loop rolling.
     }
     /*
-cloneCanvas(oldCanvas)
-{
+    cloneCanvas(oldCanvas)
+    {
 
-    //create a new canvas
-    var newCanvas = document.createElement('canvas');
-    var context = newCanvas.getContext('2d');
+        //create a new canvas
+        var newCanvas = document.createElement('canvas');
+        var context = newCanvas.getContext('2d');
 
-    //set dimensions
-    newCanvas.width = oldCanvas.width;
-    newCanvas.height = oldCanvas.height;
-    //TODO style dims?
-    newCanvas.id = oldCanvas.id;
+        //set dimensions
+        newCanvas.width = oldCanvas.width;
+        newCanvas.height = oldCanvas.height;
+        //TODO style dims?
+        newCanvas.id = oldCanvas.id;
 
-    //apply the old canvas to the new one
-    //context.drawImage(oldCanvas, 0, 0);
+        //apply the old canvas to the new one
+        //context.drawImage(oldCanvas, 0, 0);
 
-    //return the new canvas
-    return newCanvas;
-}
+        //return the new canvas
+        return newCanvas;
+    }
 
-*/
+    */
 
 }
