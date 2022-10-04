@@ -5,8 +5,7 @@ export default class GameCore
     
     renderNovalogic = true
     
-    screenwidth = 0
-    screenheight = 0
+
     
     constructor(camera, map)
     {

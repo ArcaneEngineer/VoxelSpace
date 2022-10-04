@@ -14,6 +14,9 @@ export default class Camera
     columnscale = 1.
     perspective = true
     rayStepAccl = 0.01
+    //optional, could be pulled from offscreen canvas instead.
+    screenwidth = 0
+    screenheight = 0
     
     setvFov(value)
     {

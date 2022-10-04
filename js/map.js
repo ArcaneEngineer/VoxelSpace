@@ -9,7 +9,7 @@ export default class Map
     
     
     //view related
-    canvas = undefined
+    //canvas = undefined
     
     samplesbufarr = undefined
     samples = undefined
@@ -22,8 +22,8 @@ export default class Map
     
     constructor()
     {
-        this.canvas = document.getElementById("map");//canvas;
-        console.log ("canv="+this.canvas);
+        //this.canvas = document.getElementById("map");//canvas;
+        //console.log ("canv="+this.canvas);
         this.Init();
     }
     
@@ -41,8 +41,12 @@ export default class Map
         }
     }
     
-    DownloadImagesAsync(urls)
+    Load(filenames)
     {
+        let files = filenames.split(";");
+        let urls = ["maps/"+files[0]+".png", "maps/"+files[1]+".png"];
+        //this.DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(result => this.OnLoadedImages(result) );
+        
         return new Promise(function(resolve, reject)
         {
             var pending = urls.length;
@@ -70,19 +74,10 @@ export default class Map
             });
         });
     }
-
-    Load(filenames)
-    {
-        var files = filenames.split(";");
-        this.DownloadImagesAsync(["maps/"+files[0]+".png", "maps/"+files[1]+".png"]).then(result => this.OnLoadedImages(result) );
-    }
-
+    
     //Once the chosen image pair (color, height) is loaded...
     OnLoadedImages(result)
     {
-        //
-        
-        
         var datac = result[0].data;
         var datah = result[1].data;
         for(var i=0; i<this.width*this.height; i++)
@@ -90,9 +85,11 @@ export default class Map
             this.color[i] = 0xFF000000 | (datac[(i<<2) + 2] << 16) | (datac[(i<<2) + 1] << 8) | datac[(i<<2) + 0];
             this.altitude[i] = datah[i<<2];
         }
-        //Draw();
         
-        var context = this.canvas.getContext("2d");
+        let canvas = document.getElementById("map");//canvas;
+        let context = canvas.getContext("2d");
         context.putImageData(result[0], 0, 0);
+        
+        console.log("LOADED IMAGES", result);
     }
 }
