@@ -327,6 +327,9 @@ class RaycasterView// extends CanvasView
         let zNearClip = camera.zNear; //there may be another zNear for projection
         let zFarClip  = camera.zFar;
         let nearWidth = camera.nearWidth;
+        let aspectRatio = camera.screenwidth / camera.screenheight;
+        let aspectRatioScaledToNear = (screenwidth / nearWidth) * aspectRatio;
+
         let halfNearWidth = nearWidth / 2;
         let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
 
@@ -386,7 +389,7 @@ class RaycasterView// extends CanvasView
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
                 //draw vertical....
-                let invz = (yk / zz) * (screenheight / nearWidth);
+                let invz = aspectRatioScaledToNear / zz;//(yk / zz) * (screenheight / nearWidth);
                 let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
                 let ybot = ymin[x];
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
