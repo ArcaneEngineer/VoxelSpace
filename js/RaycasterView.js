@@ -355,6 +355,7 @@ class RaycasterView// extends CanvasView
         let dy = ry - ly;
         
         let xRes = screenwidth;
+        let yRes = screenheight;
         
         //fractional step
         let sx = dx / xRes;
@@ -376,6 +377,8 @@ class RaycasterView// extends CanvasView
                 let zz = z// * z; 
                 zz = zz > zFarClip ? zFarClip : zz;
                 
+                //let mapoffset = this.getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift,raynearx, rayneary)
+                                
                 //forward step increment
                 let mapdx = raynearx * zz;
                 let mapdy = rayneary * zz;
@@ -388,6 +391,8 @@ class RaycasterView// extends CanvasView
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
+                //this.drawvertical(x, zz, mapoffset, aspectRatioScaledToNear, mapaltitude, mapcolor, columnscale, horizon, ymin, height, screenheight, screenwidth, xRes, yRes, buf32, backgroundcolor)
+                
                 //draw vertical....
                 let invz = aspectRatioScaledToNear / zz;//(yk / zz) * (screenheight / nearWidth);
                 let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
@@ -395,15 +400,20 @@ class RaycasterView// extends CanvasView
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
                 
-                let offset = ytop * xRes + x; //1D index into screen buffer
+                let bufoffset = ytop * xRes + x; //1D index into screen buffer
+                //let bufoffset = x * yRes + ytop; //1D index into screen buffer
+                
+                let color = mapcolor[mapoffset];
+                
                 for (let k = ytop; k < ybot; k++)
                 {
-                    buf32[offset]  = ybot == screenheight ? backgroundcolor : flag * mapcolor[mapoffset];
+                    buf32[bufoffset]  = ybot == screenheight ? backgroundcolor : flag * color;
                     
                     //TODO fix this horrific offsetting by whole screenwidth to +1;
                     //     done by flipping to column major image format and render
                     //     to a rotated OpenGL texture. (also change offset init)
-                    offset        += flag * xRes; //increase for line above.
+                    bufoffset        += flag * xRes; //increase for line above.
+                    //bufoffset        += flag// * xRes; //increase for line above.
                 }
                 ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
                 //...draw the vertical line segment.
@@ -421,6 +431,17 @@ class RaycasterView// extends CanvasView
         
         //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
         
+    }
+    
+    getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift, raynearx, rayneary)
+    {
+        //return mapoffset;
+    }
+    
+    drawvertical(x, zz, mapoffset, aspectRatioScaledToNear, mapaltitude, mapcolor, columnscale, horizon, ymin, height, screenheight, screenwidth, xRes, yRes, buf32, backgroundcolor)
+    {
+
+                
     }
     
     //https://stackoverflow.com/questions/8936183/bresenham-lines-w-o-diagonal-movement

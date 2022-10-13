@@ -6,14 +6,14 @@ export default class Camera
     heading =   0//-1.570796327, // direction of the camera
     horizon = 400 //280., // horizon position (look up and down)
     zNear =   10.   // near clip plane distance
-    zFar  = 900.   // far  clip plane distance
+    zFar  = 20000.   // far  clip plane distance
     //NOTE! There is also a near projection plane distance! (possibly implicit)
     yk = 0.866//0.7071, //45deg
     hFov = 1.57079633
     nearWidth = 1.
     columnscale = 1.
     perspective = true
-    rayStepAccl = 0.01
+    rayStepAccl = 0.005
     //optional, could be pulled from offscreen canvas instead.
     screenwidth = 0
     screenheight = 0
