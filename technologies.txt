@@ -13,6 +13,10 @@ WASI - WebAssembly System Interface - e.g. for writing files, network, device I/
 It can apparently (?) be used to build standalone. It seems this requires a VM like Wasmer, Wasmtime etc. 
 https://alexene.dev/2020/08/17/webassembly-without-the-browser-part-1.html
 
+---JavaScript
+
+https://www.wasm.builders/gunjan_0307/compiling-javascript-to-wasm-34lk
+
 
 ---Zig
 
