@@ -9,12 +9,7 @@ export default class Map
     
     //view related
     
-    samplesbufarr = undefined
-    samples = undefined
-    storeSamples = true
-    
-    toggled = false //map view
-    opacity = 1.0 //map view
+    current = null
     
     constructor()
     {
@@ -23,10 +18,7 @@ export default class Map
     
     Init()
     {
-        this.samplesbufarr = new ArrayBuffer(1024 * 1024 * 4);
-        this.samples = new Uint32Array (this.samplesbufarr);
-        this.samples8 = new Uint8Array (this.samplesbufarr);
-        console.log("len=", this.samples.length);
+
         
         for (let i = 0; i < this.width * this.height; i++)
         {
@@ -79,10 +71,8 @@ export default class Map
             this.altitude[i] = datah[i<<2];
         }
         
-        let canvas = document.getElementById("map");//canvas;
-        let context = canvas.getContext("2d");
-        context.putImageData(result[0], 0, 0);
+        this.current = result;
         
-        console.log("LOADED COLOR & HEIGHT IMAGES", result);
+        console.log("LOADED COLOR & HEIGHT MAPS", result);
     }
 }

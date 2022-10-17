@@ -1,4 +1,5 @@
-export default class CanvasView
+//export default 
+class CanvasView
 {
     core = undefined
     

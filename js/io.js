@@ -27,6 +27,7 @@ export default class Io
         perspective: undefined,
         rayStepAccl: undefined,
         columnscale: undefined,
+        pitch: undefined,
     }
     
     constructor(gameCore, time, elementName)
@@ -57,6 +58,7 @@ export default class Io
         canvas.ontouchend   = e => this.DetectMouseUp(e);
         canvas.ontouchmove  = e => this.DetectMouseMove(e);
         
+        controls.pitch             = document.getElementById("pitch");
         controls.zNear             = document.getElementById("zNear");
         controls.zFar              = document.getElementById("zFar");
         controls.horizon           = document.getElementById("horizon");
@@ -84,6 +86,8 @@ export default class Io
         controls.perspective.onchange = e => this.onChangePerspective(e);
         controls.rayStepAccl.oninput = e => this.onChangeRayStepAccl(e);
         controls.columnscale.oninput = e => this.onChangeColumnScale(e);
+        controls.pitch.oninput = e => this.onChangePitch(e);
+        controls.horizon.oninput = e => this.onChangeHorizon(e);
         
         controls.toggleMap.onchange = e => this.onToggleMap(e);
         controls.toggleRenderer.onchange = e => this.onToggleRenderer(e);
@@ -291,6 +295,18 @@ export default class Io
     {
         let camera = this.camera;
         camera.columnscale = e.currentTarget.valueAsNumber;
+    }
+    
+    onChangePitch(e)
+    {
+        let camera = this.camera;
+        camera.pitch = e.currentTarget.valueAsNumber;
+    }
+    
+    onChangeHorizon(e)
+    {
+        let camera = this.camera;
+        camera.horizonFrac = e.currentTarget.valueAsNumber;
     }
     
     onToggleMap(e)

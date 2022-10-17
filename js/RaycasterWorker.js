@@ -1,10 +1,13 @@
 //importScripts('Time.js')
+importScripts('CanvasView.js')
 importScripts('RaycasterView.js')
+importScripts('MapView.js')
 //importScripts('Camera.js')
 
 //var a = {test: 'boo'};
 
 //const fpsTime = new Time();
+let mapView = undefined; //new MapView(map);
 let raycaster = undefined;
 var animating = false;
 var updateCount = 0;
@@ -15,6 +18,7 @@ onmessage = (evt) =>
     let mapIn = evt.data.map;
     let renderNovalogic = evt.data.renderNovalogic;
     
+    
     // if (updateCount < 1)
     // {
         // console.log(updateCount);
@@ -23,7 +27,9 @@ onmessage = (evt) =>
     switch (typey)
     {
         case "start":
+            mapView = new MapView()//map);
             raycaster = new RaycasterView(null);//fpsTime);
+            raycaster.mapView = mapView;
             postMessage({typey: "started"});
         break;
         case "update":
@@ -32,6 +38,7 @@ onmessage = (evt) =>
             if (mapIn != null)
             {
                 raycaster.map = mapIn;
+                mapView.core = mapIn;
             }
             
             raycaster.camera = camera;
@@ -47,7 +54,7 @@ onmessage = (evt) =>
         case "resize":
             
             
-            raycaster.OnResizeWindow(evt.data.canvas, camera.screenwidth, camera.screenheight);
+            raycaster.OnResizeWindow(evt.data.raycasteroffscreencanvas, evt.data.mapoffscreencanvas, evt.data.samplesoffscreencanvas, camera.screenwidth, camera.screenheight, mapIn);
         break;
     }
     updateCount++;

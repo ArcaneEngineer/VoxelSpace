@@ -4,7 +4,7 @@ export default class Camera
     y = 134//800., // y position on the map
     height  =  70. // height of the camera
     heading =   0//-1.570796327, // direction of the camera
-    horizon = 400 //280., // horizon position (look up and down)
+    horizonFrac = 0.5 //280., // horizon position (look up and down)
     zNear =   10.   // near clip plane distance
     zFar  = 20000.   // far  clip plane distance
     //NOTE! There is also a near projection plane distance! (possibly implicit)
@@ -17,6 +17,8 @@ export default class Camera
     //optional, could be pulled from offscreen canvas instead.
     screenwidth = 0
     screenheight = 0
+    
+    pitch = 0.0
     
     setvFov(value)
     {

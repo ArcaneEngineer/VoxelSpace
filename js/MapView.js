@@ -1,4 +1,4 @@
-import CanvasView from './CanvasView.js'
+//import CanvasView from './CanvasView.js'
 // import * as vec2 from '../utils/gl-matrix/vec2.js'
 // import * as vec3 from '../utils/gl-matrix/vec3.js'
 //import {IMG_WIDTH, IMG_HEIGHT, LEVEL_ACROSS, LEVEL_LENGTH, BYTES_PIXEL, RAY_COLS_MAX, RAY_SAMPLE_COMPONENTS, CONTROL_POINTS_ACROSS, CONTROL_POINTS_LENGTH, COLOR_BY_MATERIAL_INDEX, VOXEL_COMPONENTS} from '../core/Constants.js'
@@ -7,11 +7,11 @@ import CanvasView from './CanvasView.js'
 
 const SAMPLE_RADIUS_MAX = 3;
 //top-down view of raycasted space
-export default class MapView extends CanvasView
+//export default 
+class MapView extends CanvasView
 {
-    imageData
-    context
-    
+    //N.B. Using core from superclass!
+
     svg
     
     fovGroup
@@ -27,55 +27,79 @@ export default class MapView extends CanvasView
     imageDataSamples
     contextSamples
     
-    map = undefined
+    //map = undefined
     
     containerDiv = undefined;
     
+    samplesbufarr = undefined
+    samples = undefined
+    storeSamples = true
     
-    constructor(core) //TODO should be one or the other - probably core.
+    toggled = false //map view
+    opacity = 1.0 //map view
+    
+    
+    
+    constructor()//core) //TODO should be one or the other - probably core.
     {
-        super(core);
+        //super(core);
+        super(null)
+        
+        //TODO pass map width into worker thread or pull from threadsafe const/readonly source
+        this.samplesbufarr = new ArrayBuffer(1024 * 1024 * 4);
+        this.samples = new Uint32Array (this.samplesbufarr);
+        this.samples8 = new Uint8Array (this.samplesbufarr);
+        //console.log("len=", this.samples.length);
+        
         this.initUI();
     }
     
     initUI()
     {
         let core = this.core;
+        
+        //TODO pass map width into worker thread or pull from threadsafe const/readonly source
         let xRes = this.xRes = 1024;//CONTROL_POINTS_ACROSS;
         let yRes = this.yRes = 1024;//CONTROL_POINTS_ACROSS;
         
-        let canvas = this.canvas = document.getElementById("map");
-        this.canvasSamples       = document.getElementById("samples");
-        this.containerDiv       = document.getElementById("top");
+        //let canvas = this.canvas = document.getElementById("map");
+        //this.containerDiv        = document.getElementById("top");
         /*
         this.fovGroup            = document.getElementById("fovGroup");
         this.fovArc              = document.getElementById("fovArc");
         let svg = this.svg       = document.getElementById("topVectors");
         */
         
-        this.context = this.canvas.getContext("2d");
-        this.imageData = this.context.getImageData(0,0,xRes,yRes);
-        
-        this.contextSamples = this.canvasSamples.getContext("2d");
-        this.imageDataSamples = this.contextSamples.getImageData(0,0,1024,1024);
+        // this.context = this.canvas.getContext("2d");
+        // this.imageData = this.context.getImageData(0,0,xRes,yRes);
         
         let scale = 0.25;
-        this.changeScale(scale);
+        //this.changeScale(scale);
     }
     
-    
-    update()
+    setMapAndSamplesCanvas(mapcanvas, samplescanvas)
     {
-        let core = this.core;
-        let scale = core.toggled ? 1.00 : 0.25;
-        this.changeScale(scale);
-        this.containerDiv.style.opacity = core.opacity;
+        this.canvas = mapcanvas;
+        this.context = mapcanvas.getContext("2d");
+        this.imagedata = this.context.getImageData(0,0,1024,1024);
         
-        let samples8 = core.samples8;
+        this.canvasSamples = samplescanvas;
+        this.contextSamples = this.canvasSamples.getContext("2d");
+        //TODO pass map width into worker thread or pull from threadsafe const/readonly source
+        this.imageDataSamples = this.contextSamples.getImageData(0,0,1024,1024);
+    }
+    
+    update(colCount, raysRotd)
+    {
+        //let core = this.core;
+        //let scale = this.toggled ? 1.00 : 0.25;
+        // this.changeScale(scale);
+        // this.containerDiv.style.opacity = this.opacity;
+        let samples8 = this.samples8;
         this.imageDataSamples.data.set(samples8);
         this.contextSamples.putImageData(this.imageDataSamples, 0, 0);
         
-
+        //console.log("?", samples8);
         /*
         this.changeScale(core.scale);
         
@@ -86,12 +110,20 @@ export default class MapView extends CanvasView
         */
     }
     
-    updateLines()
+    updatebackground()
+    {
+        let mapCore = this.core;
+        let context = this.context = this.canvas.getContext("2d");
+        console.log(mapCore);
+        context.putImageData(mapCore.current[0], 0, 0);
+    }
+    
+    updateLines(colCount, raysRotd)
     {
         let core = this.core;
         let camPos = core.camera.pos;
-        let colCount = core.rayCaster.colCount;
-        let raysRotd = core.rayCaster.raysRotd;
+        // let colCount = core.rayCaster.colCount;
+        // let raysRotd = core.rayCaster.raysRotd;
         let canvas = this.canvasSamples;
         let context = canvas.getContext('2d');
         let scale = core.scale;

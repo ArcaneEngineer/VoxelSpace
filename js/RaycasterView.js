@@ -17,25 +17,27 @@ class RaycasterView// extends CanvasView
     
     camera = undefined
     map = undefined
+    mapView = undefined
    
     renderNovalogic = false
     
-    constructor(fpsTime)
+    constructor(fpsTime, mapView)
     {
         this.fpsTime = fpsTime;
+        this.mapView = mapView;
         //this.fpsTime = new Time();
         
         console.log("RAycasterView ctor");
     }
     
-    OnResizeWindow(canvas, screenwidth, screenheight)
+    OnResizeWindow(raycasteroffscreencanvas, mapoffscreencanvas, samplesoffscreencanvas, screenwidth, screenheight, map)
     {
         console.log("RaycasterView.OnResizeWindow");
 
-        let xRes = this.xRes = screenwidth //canvas.width;//core.rayCaster.colCount;
-        let yRes = this.yRes = screenheight//canvas.height;//core.rayCaster.rowCount;
+        let xRes = this.xRes = screenwidth //raycasteroffscreencanvas.width;//core.rayCaster.colCount;
+        let yRes = this.yRes = screenheight//raycasteroffscreencanvas.height;//core.rayCaster.rowCount;
         
-        this.context   = canvas.getContext("2d");
+        this.context   = raycasteroffscreencanvas.getContext("2d");
         this.imagedata = this.context.createImageData(screenwidth, screenheight);
 
         this.bufarray = new ArrayBuffer(screenwidth * screenheight * 4);
@@ -43,6 +45,10 @@ class RaycasterView// extends CanvasView
         this.buf32    = new Uint32Array(this.bufarray);
         
         this.ymin = new Int32Array(screenwidth);
+        
+        this.mapView.core = map;
+        this.mapView.setMapAndSamplesCanvas(mapoffscreencanvas, samplesoffscreencanvas);
+        this.mapView.updatebackground();
     }
     
     update()
@@ -63,6 +69,8 @@ class RaycasterView// extends CanvasView
             this.RenderTerrainSilverman(camera, map, screenwidth, screenheight, this.canvas);
         
         this.Flip();
+        
+        this.mapView.update(screenwidth, 20); //TODO fix hacked in 20! (precalc steps on change?)
         /*
         //TODO put into a UI view class
         if (this.timeAccumulated >= 1000)
@@ -110,8 +118,8 @@ class RaycasterView// extends CanvasView
         let mapaltitude = map.altitude;
         let mapcolor = map.color;
         let mapshift = map.shift;
-        let mapStoreSamples = map.storeSamples;
-        let mapSamples = map.samples;
+        let mapStoreSamples = this.mapView.storeSamples;
+        let mapSamples = this.mapView.samples;
         
         //let screenwidth  = this.canvas.width|0;
         //let screenheight = this.canvas.height;
@@ -299,8 +307,8 @@ class RaycasterView// extends CanvasView
         let mapaltitude = map.altitude;
         let mapcolor = map.color;
         let mapshift = map.shift;
-        let mapStoreSamples = map.storeSamples;
-        let mapSamples = map.samples;
+        let mapStoreSamples = this.mapView.storeSamples;
+        let mapSamples = this.mapView.samples;
         
         //let screenwidth  = this.canvas.width|0;
         //let screenheight = this.canvas.height;
@@ -316,7 +324,7 @@ class RaycasterView// extends CanvasView
         }
         
         // Render from front to back
-        let height = camera.height;
+        let camheight = camera.height;
         let camx = camera.x;
         let camy = camera.y;
         let heading = camera.heading;
@@ -333,12 +341,18 @@ class RaycasterView// extends CanvasView
         let halfNearWidth = nearWidth / 2;
         let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
 
-        let horizon = screenheight / 2;//camera.horizon|0;
+        let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
         
         //NOTE! implicit or explicit *1 projection plane distance!
         const zNearProj = 1.;
         let cx = Math.sin(heading) * zNearProj;
         let cy = Math.cos(heading) * zNearProj;
+        
+        
+        let pitch = camera.pitch;
+        let sinpitch = Math.sin(-pitch);
+        let cospitch = Math.cos(-pitch);
+        console.log("pitch=", pitch, "sin=", sinpitch, "cos=", cospitch);
         
         const HALFPI = Math.PI / 2;
         
@@ -389,13 +403,19 @@ class RaycasterView// extends CanvasView
                 
                 //1D map coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                //for overhead minimap
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
                 //this.drawvertical(x, zz, mapoffset, aspectRatioScaledToNear, mapaltitude, mapcolor, columnscale, horizon, ymin, height, screenheight, screenwidth, xRes, yRes, buf32, backgroundcolor)
                 
+                let zReal = zz //* cospitch; //z + shift
+                
+                let mapheight = mapaltitude[mapoffset];
+                let hReal = (camheight - mapheight) //* sinpitch;
+                
                 //draw vertical....
-                let invz = aspectRatioScaledToNear / zz;//(yk / zz) * (screenheight / nearWidth);
-                let ytop = (height - mapaltitude[mapoffset] * columnscale) * invz + horizon|0;
+                let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
+                let ytop = (hReal * columnscale) * invz + horizon|0;
                 let ybot = ymin[x];
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   

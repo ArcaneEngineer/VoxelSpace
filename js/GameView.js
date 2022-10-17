@@ -1,4 +1,4 @@
-import MapView from './MapView.js'
+//import MapView from './MapView.js'
 //import RaycasterView from './RaycasterView.js'
 
 export default class GameView
@@ -6,7 +6,7 @@ export default class GameView
     core = undefined //remove if extends another view class!
     
     //sub-views
-    map  = undefined
+    //map  = undefined
     
     raycasterWorker = undefined
     
@@ -19,7 +19,7 @@ export default class GameView
         
         //sub-views
         this.raycasterWorker = raycasterWorker
-        this.map = map
+        //this.map = map
         this.time = time
         this.io = io
     }
@@ -36,7 +36,7 @@ export default class GameView
         this.io.UpdateCamera();
         
         //TODO process subviews as list?
-        this.map.update();
+        
         
         //this.raycaster.update();
         //TODO remove "started" in favour of "updated" when we have our generated map data model.
@@ -62,19 +62,29 @@ export default class GameView
         //TODO make it possible to resize once again...
         //"So it turns out that the only solution to this was cloning the canvas, replacing it in the DOM with its own clone, and then using transferControlToOffscreen on the clone"
         //from https://stackoverflow.com/questions/46546066/reattach-the-canvas-context-after-using-transfercontroltooffscreen
-        const canvas = document.getElementById("firstperson");
-        canvas.width = window.innerWidth//window.innerWidth;
-        canvas.height = window.innerHeight//canvas.width / aspect;
-        canvas.style.width  = window.innerWidth  + "px";
-        canvas.style.height = window.innerHeight + "px";
+        const raycastercanvas = document.getElementById("firstperson");
+        raycastercanvas.width        = window.innerWidth//window.innerWidth;
+        raycastercanvas.height       = window.innerHeight//raycastercanvas.width / aspect;
+        raycastercanvas.style.width  = window.innerWidth  + "px";
+        raycastercanvas.style.height = window.innerHeight + "px";
+        const raycasteroffscreencanvas = raycastercanvas.transferControlToOffscreen();
         
-        const offscreenCanvas = canvas.transferControlToOffscreen();
-        //offscreenCanvas.width = window.innerWidth//window.innerWidth;
-        //offscreenCanvas.height = window.innerHeight//canvas.width / aspect;
+        const mapcanvas = document.getElementById("map");
+        // mapcanvas.width        = window.innerWidth//window.innerWidth;
+        // mapcanvas.height       = window.innerHeight//mapcanvas.width / aspect;
+        // mapcanvas.style.width  = window.innerWidth  + "px";
+        // mapcanvas.style.height = window.innerHeight + "px";
+        const mapoffscreencanvas = mapcanvas.transferControlToOffscreen();
         
-        //TODO postMessage to do this!
-        this.raycasterWorker.postMessage({typey: "resize", camera: camera, map: map, renderNovalogic: core.renderNovalogic, canvas: offscreenCanvas}, [offscreenCanvas]);
-        //this.raycaster.OnResizeWindow(offscreenCanvas, core.screenwidth, core.screenheight);
+        const samplescanvas = document.getElementById("samples");
+        // samplescanvas.width        = window.innerWidth//window.innerWidth;
+        // samplescanvas.height       = window.innerHeight//samplescanvas.width / aspect;
+        // samplescanvas.style.width  = window.innerWidth  + "px";
+        // samplescanvas.style.height = window.innerHeight + "px";
+        const samplesoffscreencanvas = samplescanvas.transferControlToOffscreen();
+        
+        this.raycasterWorker.postMessage({typey: "resize", camera: camera, map: map, renderNovalogic: core.renderNovalogic, raycasteroffscreencanvas: raycasteroffscreencanvas, mapoffscreencanvas: mapoffscreencanvas, samplesoffscreencanvas: samplesoffscreencanvas}, [raycasteroffscreencanvas, mapoffscreencanvas, samplesoffscreencanvas]);
+        //this.raycaster.OnResizeWindow(raycasteroffscreencanvas, core.screenwidth, core.screenheight);
         
         this.update(); //gets the update loop rolling.
     }
