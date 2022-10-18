@@ -429,11 +429,13 @@ class RaycasterView// extends CanvasView
                 //draw vertical....
                 let zzz = zReal / aspectRatioScaledToNear;
                 let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
-                let ytop = ((relheight * columnscale) * invz + horizon)|0;
-                let ybot = screenheight//ymin[x];
-                let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
+                let ytop = ((relheight ) * invz + horizon)|0;
+                //let ybot = screenheight//ymin[x];
+                let ybot = (((relheight + 1) ) * invz + horizon)|0;
+                let flag = 1//ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
-                
+                ybot = ybot > screenheight ? screenheight : ybot;   
+                //let flag = 1;
                 let bufoffset = ytop * xRes + x; //1D index into screen buffer
                 //let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 
