@@ -435,31 +435,32 @@ class RaycasterView// extends CanvasView
                 let flag = 1//ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
                 ybot = ybot > screenheight ? screenheight : ybot;   
+                //ybot = (0 * invz + screenheight)|0;
                 //let flag = 1;
                 let bufoffset = ytop * xRes + x; //1D index into screen buffer
                 //let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 
-                //let color = mapcolor[mapoffset];
-                
                 let heightOnCol = 0;
                 let mh = mapheight - 1;
-                let color;
-                //TODO if writing row-wise (unfragmented) this could be a memset style op to cover multiple pixels at once
+                let color = 
+                        //heightOnCol < mh ?
+                        //buf32[bufoffset] :
+                        mapcolor[mapoffset];
+                let precolor = buf32[bufoffset];
+                //TODO if writing row-wise (unfragmented) we could count the number of this color, then use a memset to cover multiple pixels at once -
+                //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
                 for (let k = ytop; k < ybot; k++)
                 {
                     heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
                     
-                    color = 
-                        //heightOnCol < mh ?
-                        //buf32[bufoffset] :
-                        mapcolor[mapoffset];
-                    
-                    buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ flag * color;
+                    buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ (heightOnCol < mh ?
+                        precolor :
+                        color);
                     
                     //TODO fix this horrific offsetting by whole screenwidth to +1;
                     //     done by flipping to column major image format and render
                     //     to a rotated OpenGL texture. (also change offset init)
-                    bufoffset        += flag * xRes; //increase for line above.
+                    bufoffset        += xRes; //increase for line above.
                     //bufoffset        += flag// * xRes; //increase for line above.
                 }
             }
