@@ -116,7 +116,7 @@ class RaycasterView// extends CanvasView
         let mapwidthperiod  = map.width - 1;
         let mapheightperiod = map.height - 1;
         let mapaltitude = map.altitude;
-        let mapcolor = map.color;
+        const mapcolor = map.color;
         let mapshift = map.shift;
         let mapStoreSamples = this.mapView.storeSamples;
         let mapSamples = this.mapView.samples;
@@ -313,9 +313,10 @@ class RaycasterView// extends CanvasView
         //let screenwidth  = this.canvas.width|0;
         //let screenheight = this.canvas.height;
         
-        let ymin = this.ymin;
-        for (let x = 0; x < screenwidth; x++)
-            ymin[x] = screenheight; //TODO OPTIMISE
+        let ymin = screenheight;
+        // let ymin = this.ymin;
+        // for (let x = 0; x < screenwidth; x++)
+            // ymin[x] = screenheight; //TODO OPTIMISE
         
         if (mapStoreSamples)
         {
@@ -383,12 +384,15 @@ class RaycasterView// extends CanvasView
         
         for (let x = 0; x < xRes; x++) //for each screen column
         {
+            ymin = screenheight
             // deltaz = 1.0;
             // rayStepAccl = 0.1;
             let a = 0.5;
             let z = 0;
             
-            for (z = zFarClip; z > 1; z /= 1.008)
+            let zmul = 1 / 1.008;
+            
+            for (z = zFarClip; z > 1; z *= zmul)
             //for (z = zFarClip; z > 0; z--)// /= 1.008)
             //for (z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
             {
@@ -407,6 +411,9 @@ class RaycasterView// extends CanvasView
                 let maplx = camx + mapdx;
                 let maply = camy + mapdy;
                 
+                let flx = Math.floor(maplx)
+                let fly = Math.floor(maply)
+                
                 //1D map coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 //for overhead minimap
@@ -417,11 +424,12 @@ class RaycasterView// extends CanvasView
                 let zReal = zz //* cospitch; //z + shift
                 
                 let mapheight = mapaltitude[mapoffset];
-                let hReal = (camheight - mapheight) //* sinpitch;
+                let relheight = (camheight - mapheight) //* sinpitch;
                 
                 //draw vertical....
+                let zzz = zReal / aspectRatioScaledToNear;
                 let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
-                let ytop = (hReal * columnscale) * invz + horizon|0;
+                let ytop = ((relheight * columnscale) * invz + horizon)|0;
                 let ybot = screenheight//ymin[x];
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
@@ -429,12 +437,21 @@ class RaycasterView// extends CanvasView
                 let bufoffset = ytop * xRes + x; //1D index into screen buffer
                 //let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 
-                let color = mapcolor[mapoffset];
-                //let color = this.sampleColorAt(mapoffset, z);
+                //let color = mapcolor[mapoffset];
                 
+                let heightOnCol = 0;
+                let mh = mapheight - 1;
+                let color;
                 //TODO if writing row-wise (unfragmented) this could be a memset style op to cover multiple pixels at once
                 for (let k = ytop; k < ybot; k++)
                 {
+                    heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
+                    
+                    color = 
+                        heightOnCol < mh ?
+                        buf32[bufoffset] :
+                        mapcolor[mapoffset];
+                    
                     buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ flag * color;
                     
                     //TODO fix this horrific offsetting by whole screenwidth to +1;
@@ -443,13 +460,7 @@ class RaycasterView// extends CanvasView
                     bufoffset        += flag * xRes; //increase for line above.
                     //bufoffset        += flag// * xRes; //increase for line above.
                 }
-                //ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
-                //...draw the vertical line segment.
-                //break;
-                //rayStepAccl += rayStepJolt;
-                //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
             }
-            //console.log("final z", z);
             
             //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
             raynearx += sx;
@@ -461,16 +472,6 @@ class RaycasterView// extends CanvasView
         //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
         
     }
-    /*
-    sampleColorAt(mapoffset, altitude)
-    {
-        let mapaltitude = map.altitude;
-        return mapaltitude[mapoffset] 
-            0 :
-            mapcolor[mapoffset];
-        
-    }
-    */
     
     getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift, raynearx, rayneary)
     {
