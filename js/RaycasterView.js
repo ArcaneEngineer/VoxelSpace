@@ -450,8 +450,8 @@ class RaycasterView// extends CanvasView
                     heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
                     
                     color = 
-                        heightOnCol < mh ?
-                        buf32[bufoffset] :
+                        //heightOnCol < mh ?
+                        //buf32[bufoffset] :
                         mapcolor[mapoffset];
                     
                     buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ flag * color;
