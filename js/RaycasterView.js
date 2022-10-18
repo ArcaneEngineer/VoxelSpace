@@ -344,15 +344,15 @@ class RaycasterView// extends CanvasView
         let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
         
         //NOTE! implicit or explicit *1 projection plane distance!
-        const zNearProj = 1.;
+        const zNearProj = 1;//zFarClip//1.;
         let cx = Math.sin(heading) * zNearProj;
         let cy = Math.cos(heading) * zNearProj;
         
         
-        let pitch = camera.pitch;
-        let sinpitch = Math.sin(-pitch);
-        let cospitch = Math.cos(-pitch);
-        console.log("pitch=", pitch, "sin=", sinpitch, "cos=", cospitch);
+        // let pitch = camera.pitch;
+        // let sinpitch = Math.sin(-pitch);
+        // let cospitch = Math.cos(-pitch);
+        //console.log("pitch=", pitch, "sin=", sinpitch, "cos=", cospitch);
         
         const HALFPI = Math.PI / 2;
         
@@ -386,10 +386,16 @@ class RaycasterView// extends CanvasView
             // deltaz = 1.0;
             // rayStepAccl = 0.1;
             let a = 0.5;
-            for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
+            let z = 0;
+            
+            for (z = zFarClip; z > 1; z /= 1.008)
+            //for (z = zFarClip; z > 0; z--)// /= 1.008)
+            //for (z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
             {
                 let zz = z// * z; 
-                zz = zz > zFarClip ? zFarClip : zz;
+                //zz = zz > zFarClip ? zFarClip : zz;
+                //zz < 
+                
                 
                 //let mapoffset = this.getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift,raynearx, rayneary)
                                 
@@ -416,7 +422,7 @@ class RaycasterView// extends CanvasView
                 //draw vertical....
                 let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
                 let ytop = (hReal * columnscale) * invz + horizon|0;
-                let ybot = ymin[x];
+                let ybot = screenheight//ymin[x];
                 let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
                 
@@ -424,10 +430,12 @@ class RaycasterView// extends CanvasView
                 //let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 
                 let color = mapcolor[mapoffset];
+                //let color = this.sampleColorAt(mapoffset, z);
                 
+                //TODO if writing row-wise (unfragmented) this could be a memset style op to cover multiple pixels at once
                 for (let k = ytop; k < ybot; k++)
                 {
-                    buf32[bufoffset]  = ybot == screenheight ? backgroundcolor : flag * color;
+                    buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ flag * color;
                     
                     //TODO fix this horrific offsetting by whole screenwidth to +1;
                     //     done by flipping to column major image format and render
@@ -435,12 +443,13 @@ class RaycasterView// extends CanvasView
                     bufoffset        += flag * xRes; //increase for line above.
                     //bufoffset        += flag// * xRes; //increase for line above.
                 }
-                ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
+                //ymin[x] = ytop < ymin[x] ? ytop : ymin[x];
                 //...draw the vertical line segment.
-                
+                //break;
                 //rayStepAccl += rayStepJolt;
                 //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
             }
+            //console.log("final z", z);
             
             //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
             raynearx += sx;
@@ -452,6 +461,16 @@ class RaycasterView// extends CanvasView
         //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
         
     }
+    /*
+    sampleColorAt(mapoffset, altitude)
+    {
+        let mapaltitude = map.altitude;
+        return mapaltitude[mapoffset] 
+            0 :
+            mapcolor[mapoffset];
+        
+    }
+    */
     
     getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift, raynearx, rayneary)
     {
