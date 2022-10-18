@@ -19,7 +19,7 @@ class RaycasterView// extends CanvasView
     map = undefined
     mapView = undefined
    
-    renderNovalogic = true//false
+    renderNovalogic = 0//false
     
     constructor(fpsTime, mapView)
     {
@@ -63,11 +63,14 @@ class RaycasterView// extends CanvasView
         let screenwidth = camera.screenwidth;
         let screenheight = camera.screenheight;
         
-        if (this.renderNovalogic)
-            //this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas);
-            this.RenderTerrainSolid(camera, map, screenwidth, screenheight, this.canvas);
-        else
-            this.RenderTerrainOverhang(camera, map, screenwidth, screenheight, this.canvas);
+        //TODO use func table
+        switch (this.renderNovalogic)
+        {
+            case 0: this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas); break;
+            case 1: this.RenderTerrainSolid    (camera, map, screenwidth, screenheight, this.canvas); break;
+            case 2: this.RenderTerrainOverhang (camera, map, screenwidth, screenheight, this.canvas); break;
+            //default: this.ClearScreen(this.canvas);
+        }
         
         this.Flip();
         

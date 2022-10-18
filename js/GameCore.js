@@ -3,7 +3,7 @@ export default class GameCore
     camera = undefined
     map = undefined
     
-    renderNovalogic = true
+    renderNovalogic = 0
     
 
     

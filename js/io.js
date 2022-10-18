@@ -323,7 +323,8 @@ export default class Io
     
     onChangeRenderer(e)
     {
-        this.gameCore.renderNovalogic = e.currentTarget.checked;
+        console
+        this.gameCore.renderNovalogic = e.currentTarget.selectedIndex;
         //map.updateScale(); //would be more performant but worse structured.
     }
     

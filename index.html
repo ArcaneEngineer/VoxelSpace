@@ -105,7 +105,11 @@
     <label for="pitch ">pitch</label><input id="pitch" type="range" min="-1.57" max="1.57" value="0.0" step="0.01">
     <label for="horizon ">horizon</label><input id="horizon" type="range" min="0" max="1.0" value="0.5" step="0.01">
     
-    <input type="checkbox" id="renderer" name="renderer" checked>
+    <select id="renderer">
+        <option value="0" selected>Novalogic (no FoV adjust)</option>
+        <option value="1"         >Solid</option>
+        <option value="2"         >Hollow</option>
+    </select>
 </div>
 
 <!-- <div id="fps" style="position: absolute; display: block; bottom: 0px; right: 0px;> -->
