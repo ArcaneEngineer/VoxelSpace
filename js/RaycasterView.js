@@ -19,7 +19,7 @@ class RaycasterView// extends CanvasView
     map = undefined
     mapView = undefined
    
-    renderNovalogic = false
+    renderNovalogic = true//false
     
     constructor(fpsTime, mapView)
     {
@@ -64,9 +64,10 @@ class RaycasterView// extends CanvasView
         let screenheight = camera.screenheight;
         
         if (this.renderNovalogic)
-            this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas);
+            //this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas);
+            this.RenderTerrainSolid(camera, map, screenwidth, screenheight, this.canvas);
         else
-            this.RenderTerrainSilverman(camera, map, screenwidth, screenheight, this.canvas);
+            this.RenderTerrainOverhang(camera, map, screenwidth, screenheight, this.canvas);
         
         this.Flip();
         
@@ -281,6 +282,8 @@ class RaycasterView// extends CanvasView
         }
     }
     
+    
+    
 //TODO
 
 // -Render working thread + OffscreenCanvas
@@ -296,7 +299,157 @@ class RaycasterView// extends CanvasView
 // -silverman planes radial
 //--https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
     
-    RenderTerrainSilverman(camera, map, screenwidth, screenheight)
+    RenderTerrainSolid(camera, map, screenwidth, screenheight)
+    {
+        let backgroundcolor = this.backgroundcolor;
+        let deltaz = 1.;
+        let buf32 = this.buf32;
+                
+        let mapwidthperiod  = map.width - 1;
+        let mapheightperiod = map.height - 1;
+        let mapaltitude = map.altitude;
+        let mapcolor = map.color;
+        let mapshift = map.shift;
+        let mapStoreSamples = this.mapView.storeSamples;
+        let mapSamples = this.mapView.samples;
+        
+        if (mapStoreSamples)
+        {
+            for (let i = 0; i < 1024 * 1024; i++)
+                mapSamples[i] = 0;
+        }
+        
+        // Render from front to back
+        let camheight = camera.height;
+        let camx = camera.x;
+        let camy = camera.y;
+        let heading = camera.heading;
+        let yk = camera.yk;
+        let columnscale = camera.columnscale;
+        let perspective = camera.perspective;
+        let rayStepAccl = camera.rayStepAccl;
+        let zNearClip = camera.zNear; //there may be another zNear for projection
+        let zFarClip  = camera.zFar;
+        let nearWidth = camera.nearWidth;
+        let aspectRatio = camera.screenwidth / camera.screenheight;
+        let aspectRatioScaledToNear = (screenwidth / nearWidth) * aspectRatio;
+
+        let halfNearWidth = nearWidth / 2;
+        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
+
+        let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
+        
+        //NOTE! implicit or explicit *1 projection plane distance!
+        const zNearProj = 1.;
+        let cx = Math.sin(heading) * zNearProj;
+        let cy = Math.cos(heading) * zNearProj;
+        
+        // let pitch = camera.pitch;
+        // let sinpitch = Math.sin(-pitch);
+        // let cospitch = Math.cos(-pitch);
+        // console.log("pitch=", pitch, "sin=", sinpitch, "cos=", cospitch);
+        
+        const HALFPI = Math.PI / 2;
+        
+        //l(eft), r(ight) edges of near plane.
+        //-90 deg along near plane
+        let lx = cx + Math.sin(heading - HALFPI) * halfNearWidthScaled;
+        let ly = cy + Math.cos(heading - HALFPI) * halfNearWidthScaled;
+        
+        //+90 deg alone near plane
+        let rx = cx + Math.sin(heading + HALFPI) * halfNearWidthScaled;
+        let ry = cy + Math.cos(heading + HALFPI) * halfNearWidthScaled;
+        
+        let dx = rx - lx;
+        let dy = ry - ly;
+        
+        let xRes = screenwidth;
+        let yRes = screenheight;
+        
+        //fractional step
+        let sx = dx / xRes;
+        let sy = dy / xRes;
+        
+        //what is the position on the near plane? (changes)
+        let raynearx = lx;
+        let rayneary = ly;
+        
+        let rayStepJolt = 0.1;
+        
+        for (let x = 0; x < xRes; x++) //for each screen column
+        {
+            let ymin = screenheight;
+            // deltaz = 1.0;
+            // rayStepAccl = 0.1;
+            let a = 0.5;
+            for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
+            {
+                let zz = z// * z; 
+                zz = zz > zFarClip ? zFarClip : zz;
+                
+                //let mapoffset = this.getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift,raynearx, rayneary)
+                                
+                //forward step increment
+                let mapdx = raynearx * zz;
+                let mapdy = rayneary * zz;
+                
+                //2D map / world coords
+                let maplx = camx + mapdx;
+                let maply = camy + mapdy;
+                
+                //1D map coords: cheap modulo wrap on x & y + upshift y.
+                let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                //for overhead minimap
+                mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
+                
+                //this.drawvertical(x, zz, mapoffset, aspectRatioScaledToNear, mapaltitude, mapcolor, columnscale, horizon, ymin, height, screenheight, screenwidth, xRes, yRes, buf32, backgroundcolor)
+                
+                let zReal = zz //* cospitch; //z + shift
+                
+                let mapheight = mapaltitude[mapoffset];
+                let hReal = (camheight - mapheight) //* sinpitch;
+                
+                //draw vertical....
+                let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
+                let ytop = (hReal * columnscale) * invz + horizon|0;
+                let ybot = ymin;
+                //let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
+                //ytop = ytop < 0 ? 0 : ytop;   
+                let flag = 1;
+                let bufoffset = ytop * xRes + x; //1D index into screen buffer
+                //let bufoffset = x * yRes + ytop; //1D index into screen buffer
+                
+                let color = mapcolor[mapoffset];
+                
+                for (let k = ytop; k < ybot; k++)
+                {
+                    buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ /*flag * */ color;
+                    
+                    //TODO fix this horrific offsetting by whole screenwidth to +1;
+                    //     done by flipping to column major image format and render
+                    //     to a rotated OpenGL texture. (also change offset init)
+                    bufoffset        += /*flag * */ xRes; //increase for line above.
+                    //bufoffset        += flag// * xRes; //increase for line above.
+                }
+                ymin = ytop < ymin ? ytop : ymin;
+                //...draw the vertical line segment.
+                
+                //rayStepAccl += rayStepJolt;
+                //deltaz += rayStepAccl; //OPTIMISE increments further away to be greater.
+            }
+            
+            //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
+            raynearx += sx;
+            rayneary += sy;
+        }
+        
+        
+        
+        //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+        
+    }
+    
+    RenderTerrainOverhang(camera, map, screenwidth, screenheight)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;

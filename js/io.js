@@ -24,10 +24,11 @@ export default class Io
         heading: undefined,
         height: undefined,
         hFovTest: undefined,
-        perspective: undefined,
+        //perspective: undefined,
         rayStepAccl: undefined,
         columnscale: undefined,
         pitch: undefined,
+        renderer: undefined,
     }
     
     constructor(gameCore, time, elementName)
@@ -68,11 +69,11 @@ export default class Io
         controls.heading           = document.getElementById("heading");
         controls.height            = document.getElementById("height");
         controls.nearWidth         = document.getElementById("nearWidth");
-        controls.perspective       = document.getElementById("perspective");
-        controls.rayStepAccl      = document.getElementById("rayStepAccl");
-        controls.toggleMap      = document.getElementById("toggleMap");
-        controls.mapOpacity = document.getElementById("mapOpacity");
-        controls.toggleRenderer = document.getElementById("toggleRenderer");
+        //controls.perspective       = document.getElementById("perspective");
+        controls.rayStepAccl       = document.getElementById("rayStepAccl");
+        controls.toggleMap         = document.getElementById("toggleMap");
+        controls.mapOpacity        = document.getElementById("mapOpacity");
+        controls.renderer          = document.getElementById("renderer");
         
         controls.zNear.value = camera.zNear;
         controls.zFar.value = camera.zFar;
@@ -83,14 +84,14 @@ export default class Io
         controls.heading.oninput = e => this.onChangeHeading(e);
         // controls.hFov.oninput = e => this.onChangehFov(e);
         controls.nearWidth.oninput = e => this.onChangeNearWidth(e);
-        controls.perspective.onchange = e => this.onChangePerspective(e);
+        //controls.perspective.onchange = e => this.onChangePerspective(e);
         controls.rayStepAccl.oninput = e => this.onChangeRayStepAccl(e);
         controls.columnscale.oninput = e => this.onChangeColumnScale(e);
         controls.pitch.oninput = e => this.onChangePitch(e);
         controls.horizon.oninput = e => this.onChangeHorizon(e);
         
         controls.toggleMap.onchange = e => this.onToggleMap(e);
-        controls.toggleRenderer.onchange = e => this.onToggleRenderer(e);
+        controls.renderer.onchange = e => this.onChangeRenderer(e);
         
         controls.mapOpacity.oninput = e => this.onChangeMapOpacity(e);
         
@@ -320,7 +321,7 @@ export default class Io
         this.gameCore.map.opacity = e.currentTarget.valueAsNumber;
     }
     
-    onToggleRenderer(e)
+    onChangeRenderer(e)
     {
         this.gameCore.renderNovalogic = e.currentTarget.checked;
         //map.updateScale(); //would be more performant but worse structured.
