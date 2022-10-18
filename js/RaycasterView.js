@@ -443,7 +443,7 @@ class RaycasterView// extends CanvasView
                 let heightOnCol = 0;
                 let mh = mapheight - 1;
                 let color = 
-                        //heightOnCol < mh ?
+                        //heightOnCol < mh ? //conditional here if we only want to render topmost voxel.
                         //buf32[bufoffset] :
                         mapcolor[mapoffset];
                 let precolor = buf32[bufoffset];
@@ -453,7 +453,7 @@ class RaycasterView// extends CanvasView
                 {
                     heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
                     
-                    buf32[bufoffset]  = /*ybot == screenheight ? backgroundcolor :*/ (heightOnCol < mh ?
+                    buf32[bufoffset]  = (heightOnCol < mh ? //conditional here if we need to run through empty spaces for overhangs.
                         precolor :
                         color);
                     
