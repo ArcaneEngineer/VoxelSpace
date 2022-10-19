@@ -68,7 +68,8 @@ class RaycasterView// extends CanvasView
         {
             case 0: this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas); break;
             case 1: this.RenderTerrainSolid    (camera, map, screenwidth, screenheight, this.canvas); break;
-            case 2: this.RenderTerrainOverhang (camera, map, screenwidth, screenheight, this.canvas); break;
+            case 2: this.RenderTerrainSurface  (camera, map, screenwidth, screenheight, this.canvas); break;
+            case 3: this.RenderTerrainOverhang (camera, map, screenwidth, screenheight, this.canvas); break;
             //default: this.ClearScreen(this.canvas);
         }
         
@@ -452,7 +453,7 @@ class RaycasterView// extends CanvasView
         
     }
     
-    RenderTerrainOverhang(camera, map, screenwidth, screenheight)
+    RenderTerrainSurface(camera, map, screenwidth, screenheight)
     {
         let backgroundcolor = this.backgroundcolor;
         let deltaz = 1.;
@@ -554,8 +555,6 @@ class RaycasterView// extends CanvasView
             {
                 let zz = z// * z; 
                 //zz = zz > zFarClip ? zFarClip : zz;
-                //zz < 
-                
                 
                 //let mapoffset = this.getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift,raynearx, rayneary)
                                 
@@ -567,9 +566,8 @@ class RaycasterView// extends CanvasView
                 let maplx = camx + mapdx;
                 let maply = camy + mapdy;
                 
-                let flx = Math.floor(maplx)
-                let fly = Math.floor(maply)
-                
+                // let flx = Math.floor(maplx)
+                // let fly = Math.floor(maply)
                 //1D map coords: cheap modulo wrap on x & y + upshift y.
                 let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 //for overhead minimap
@@ -598,10 +596,175 @@ class RaycasterView// extends CanvasView
                 
                 let heightOnCol = 0;
                 let mh = mapheight - 1;
-                let color = 
-                        //heightOnCol < mh ? //conditional here if we only want to render topmost voxel.
-                        //buf32[bufoffset] :
-                        mapcolor[mapoffset];
+                let color = mapcolor[mapoffset];
+                //TODO if writing row-wise (unfragmented) we could count the number of this color, then use a memset to cover multiple pixels at once -
+                //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
+                for (let k = ytop; k < ybot; k++)
+                {
+                    //heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
+                    
+                    buf32[bufoffset] = color;
+                    
+                    //TODO fix this horrific offsetting by whole screenwidth to +1;
+                    //     done by flipping to column major image format and render
+                    //     to a rotated OpenGL texture. (also change offset init)
+                    bufoffset        += xRes; //increase for line above.
+                    //bufoffset        += flag// * xRes; //increase for line above.
+                }
+            }
+            
+            //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
+            raynearx += sx;
+            rayneary += sy;
+        }
+        
+        
+        
+        //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+        
+    }
+    
+    RenderTerrainOverhang(camera, map, screenwidth, screenheight)
+    {
+        let backgroundcolor = this.backgroundcolor;
+        let deltaz = 1.;
+        let buf32 = this.buf32;
+                
+        let mapwidthperiod  = map.width - 1;
+        let mapheightperiod = map.height - 1;
+        let mapaltitude = map.altitude;
+        let mapcolor = map.color;
+        let mapshift = map.shift;
+        let mapStoreSamples = this.mapView.storeSamples;
+        let mapSamples = this.mapView.samples;
+        
+        //let screenwidth  = this.canvas.width|0;
+        //let screenheight = this.canvas.height;
+        
+        let ymin = screenheight;
+        // let ymin = this.ymin;
+        // for (let x = 0; x < screenwidth; x++)
+            // ymin[x] = screenheight; //TODO OPTIMISE
+        
+        if (mapStoreSamples)
+        {
+            for (let i = 0; i < 1024 * 1024; i++)
+                mapSamples[i] = 0;
+        }
+        
+        // Render from front to back
+        let camheight = camera.height;
+        let camx = camera.x;
+        let camy = camera.y;
+        let heading = camera.heading;
+        let yk = camera.yk;
+        let columnscale = camera.columnscale;
+        let perspective = camera.perspective;
+        let rayStepAccl = camera.rayStepAccl;
+        let zNearClip = camera.zNear; //there may be another zNear for projection
+        let zFarClip  = camera.zFar;
+        let nearWidth = camera.nearWidth;
+        let aspectRatio = camera.screenwidth / camera.screenheight;
+        let aspectRatioScaledToNear = (screenwidth / nearWidth) * aspectRatio;
+
+        let halfNearWidth = nearWidth / 2;
+        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
+
+        let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
+        
+        //NOTE! implicit or explicit *1 projection plane distance!
+        const zNearProj = 1;//zFarClip//1.;
+        let cx = Math.sin(heading) * zNearProj;
+        let cy = Math.cos(heading) * zNearProj;
+        
+        
+        // let pitch = camera.pitch;
+        // let sinpitch = Math.sin(-pitch);
+        // let cospitch = Math.cos(-pitch);
+        //console.log("pitch=", pitch, "sin=", sinpitch, "cos=", cospitch);
+        
+        const HALFPI = Math.PI / 2;
+        
+        //l(eft), r(ight) edges of near plane.
+        //-90 deg along near plane
+        let lx = cx + Math.sin(heading - HALFPI) * halfNearWidthScaled;
+        let ly = cy + Math.cos(heading - HALFPI) * halfNearWidthScaled;
+        
+        //+90 deg alone near plane
+        let rx = cx + Math.sin(heading + HALFPI) * halfNearWidthScaled;
+        let ry = cy + Math.cos(heading + HALFPI) * halfNearWidthScaled;
+        
+        let dx = rx - lx;
+        let dy = ry - ly;
+        
+        let xRes = screenwidth;
+        let yRes = screenheight;
+        
+        //fractional step
+        let sx = dx / xRes;
+        let sy = dy / xRes;
+        
+        //what is the position on the near plane? (changes)
+        let raynearx = lx;
+        let rayneary = ly;
+        
+        let rayStepJolt = 0.1;
+        
+        for (let x = 0; x < xRes; x++) //for each screen column
+        {
+            ymin = screenheight;
+            // deltaz = 1.0;
+            // rayStepAccl = 0.1;
+            let a = 0.5;
+            let z = 0;
+            
+            let zmul = 1 / 1.008;
+            
+            for (z = zFarClip; z > 1; z *= zmul)
+            //for (z = zFarClip; z > 0; z--)// /= 1.008)
+            //for (z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
+            {
+                let zz = z// * z; 
+                //zz = zz > zFarClip ? zFarClip : zz;
+                
+                //let mapoffset = this.getmapoffset(zz, zFarClip, mapSamples, mapStoreSamples, camx, camy, mapwidthperiod, mapheightperiod, mapshift,raynearx, rayneary)
+                                
+                //forward step increment
+                let mapdx = raynearx * zz;
+                let mapdy = rayneary * zz;
+                
+                //2D map / world coords
+                let maplx = camx + mapdx;
+                let maply = camy + mapdy;
+                
+                
+                
+                //1D map coords: cheap modulo wrap on x & y + upshift y.
+                let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                //for overhead minimap
+                mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
+                
+                //this.drawvertical(x, zz, mapoffset, aspectRatioScaledToNear, mapaltitude, mapcolor, columnscale, horizon, ymin, height, screenheight, screenwidth, xRes, yRes, buf32, backgroundcolor)
+                
+                let zReal = zz //* cospitch; //z + shift
+                
+                let mapheight = mapaltitude[mapoffset];
+                let relheight  = (camheight - mapheight) //* sinpitch;
+                
+                //draw vertical....
+                let zzz = zReal / aspectRatioScaledToNear;
+                let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
+                let ytop = ((relheight ) * invz + horizon)|0;
+                let ybot = ymin;
+                //let flag = ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
+                //ytop = ytop < 0 ? 0 : ytop;   
+                let flag = 1;
+                let bufoffset = ytop * xRes + x; //1D index into screen buffer
+                //let bufoffset = x * yRes + ytop; //1D index into screen buffer
+                
+                let heightOnCol = 0;
+                let mh = mapheight - 1;
+                let color = mapcolor[mapoffset];
                 let precolor = buf32[bufoffset];
                 //TODO if writing row-wise (unfragmented) we could count the number of this color, then use a memset to cover multiple pixels at once -
                 //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
@@ -609,14 +772,14 @@ class RaycasterView// extends CanvasView
                 {
                     heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
                     
-                    buf32[bufoffset]  = (heightOnCol < mh ? //conditional here if we need to run through empty spaces for overhangs.
-                        precolor :
-                        color);
-                    
+                    buf32[bufoffset]  = 
+                        //heightOnCol < mh ? //conditional here if we need to run through empty spaces for overhangs.
+                        //precolor :
+                        color;
                     //TODO fix this horrific offsetting by whole screenwidth to +1;
                     //     done by flipping to column major image format and render
                     //     to a rotated OpenGL texture. (also change offset init)
-                    bufoffset        += xRes; //increase for line above.
+                    bufoffset        += /*flag * */ xRes; //increase for line above.
                     //bufoffset        += flag// * xRes; //increase for line above.
                 }
             }
