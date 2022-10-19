@@ -47,11 +47,11 @@ class RaycasterView// extends CanvasView
         this.buf8     = new Uint8Array (this.bufarray);
         this.buf32    = new Uint32Array(this.bufarray);
         
-        let zBufLen = xRes / 2 > 1024 / 2 ? xRes / 2 : 1024 / 2; //512 minimum
+        let zBufLen = xRes / 2// > 1024 / 2 ? xRes / 2 : 1024 / 2; //512 minimum
         this.zBufRay = new Uint8Array(zBufLen); //bytes / max height for loaded heightmaps
-        let rays = this.rays = new Float32Array(zBufLen * 4 * 2); //4 sides of screen, 2 components per vector
+        const numRays = 918 * 4; //4096 //xRes * 2 + yRes * 2
+        let rays = this.rays = new Float32Array(numRays * 2); //4 sides of screen, 2 components per vector
         let heading = 0;
-        const numRays = 918 * 4; //4096
         const headingIncr = Math.PI * 2 / numRays;
         
         for (let r = 0; r < numRays; r++)
@@ -520,7 +520,7 @@ class RaycasterView// extends CanvasView
         //TODO later it may be better to calc rays on the fly as offsets within [0..screenwidth-1, 0..screenheight-1] (need conversion to world space however)
         let zBufRay = this.zBufRay;
         let rays = this.rays;
-        const rayslength = rays.length;
+        const rayslength = rays.length / 2;
         for (let r = 0; r < rayslength; r++)
         {
             //copy normalised values out (don't affect source array)
