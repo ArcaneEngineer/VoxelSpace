@@ -527,6 +527,31 @@ class RaycasterView// extends CanvasView
             let rnx = rays[r*2+0];
             let rny = rays[r*2+1];
             
+            //step according to distance
+            let mapdx = rnx * 30;
+            let mapdy = rny * 30;
+            
+            //2D map / world coords
+            let maplx = camx + mapdx;
+            let maply = camy + mapdy;
+            
+            //1D map coords: cheap modulo wrap on x & y + upshift y.
+            let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+            mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0; //for overhead minimap
+            
+            let colheight = mapaltitude[mapoffset];
+            let relheight = (camheight - colheight); //for top down orientation, this is camera z!
+            
+            let invz = aspectRatioScaledToNear / relheight;
+                
+            //assumes same x and y screen size TODO use separate "horizon"
+            let lastscrx = parseInt((mapdx) * invz + horizon|0),
+                lastscry = parseInt((mapdy) * invz + horizon|0),
+                //lastoffset = 0,
+                lastcolor = 0; //white?
+            
+            let scrx, scry;
+            
             //write from edges to centre of screen: allows overhangs per ray
             //since the outer part is written first, which is then overwritten
             //by cols that are more toward centre.
@@ -534,37 +559,52 @@ class RaycasterView// extends CanvasView
             //for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
             {
                 //step according to distance
-                let mapdx = rnx * z;
-                let mapdy = rny * z;
+                mapdx = rnx * z;
+                mapdy = rny * z;
                 
                 //2D map / world coords
-                let maplx = camx + mapdx;
-                let maply = camy + mapdy;
+                maplx = camx + mapdx;
+                maply = camy + mapdy;
                 
                 //1D map coords: cheap modulo wrap on x & y + upshift y.
-                let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0; //for overhead minimap
                 
-                let colheight = mapaltitude[mapoffset];
-                let relheight = (camheight - colheight); //for top down orientation, this is camera z!
+                colheight = mapaltitude[mapoffset];
+                relheight = (camheight - colheight); //for top down orientation, this is camera z!
                 
-                let invz = aspectRatioScaledToNear / relheight;
+                invz = aspectRatioScaledToNear / relheight;
                 //assumes same x and y screen size TODO use separate "horizon"
-                let scrx = (mapdx) * invz + horizon|0; 
-                let scry = (mapdy) * invz + horizon|0;
-                //DRAW
+                scrx = parseInt((mapdx) * invz + horizon|0); 
+                scry = parseInt((mapdy) * invz + horizon|0);
+                
+                //PLOT THE NEW POINT
                 let bufoffset = scry * xRes + scrx; //1D index into screen buffer
                 let color = mapcolor[mapoffset];
                 buf32[bufoffset] = color;
                 
-                //console.log(bufoffset)
                 
+                //DRAG LINE FROM LAST POINT
+                
+                if (Math.abs(lastscrx - scrx) + Math.abs(lastscry - scry) > 2)
+                {
+                    this.line(lastscrx, lastscry, scrx, scry, lastcolor);
+                }
+                
+                lastscrx = scrx;
+                lastscry = scry;
+                lastcolor = color;
+                //lastoffset = bufoffset;
             }
+            //console.log("finished r=", r);
         }
         
         //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
-        
+        this.f = 0;
     }
+    
+    f = 1
+
     
     RenderTerrainSurface(camera, map, screenwidth, screenheight)
     {
@@ -919,6 +959,44 @@ class RaycasterView// extends CanvasView
 
                 
     }
+    
+    line(x0, y0, x1, y1,  //note: should all be integers!
+        color)
+    {
+        let buf32 = this.buf32;
+        let xRes = this.camera.screenwidth;
+        
+        //note: all integers!
+        let xDist = parseInt( Math.abs(x1 - x0));
+        let yDist = parseInt(-Math.abs(y1 - y0));
+        let xStep = parseInt(x0 < x1 ? +1 : -1);
+        let yStep = parseInt(y0 < y1 ? +1 : -1);
+        let error = parseInt(xDist + yDist);
+        
+        while (true)
+        {
+            if (2*error >= yDist)
+            {
+                if (x0 == x1) break;
+                // horizontal step
+                error += yDist;
+                x0 += xStep;
+            }
+
+            if (2*error <= xDist)
+            {
+                if (y0 == y1) break;
+                // vertical step
+                error += xDist;
+                y0 += yStep;
+            }
+            
+            let bufoffset = y0 * xRes + x0; //1D index into screen buffer
+            buf32[bufoffset] = color;
+        }
+        
+    }
+    
     
     //https://stackoverflow.com/questions/8936183/bresenham-lines-w-o-diagonal-movement
     //https://stackoverflow.com/questions/35422997/understanding-bresenhams-error-accumulation-part-of-the-algorithm

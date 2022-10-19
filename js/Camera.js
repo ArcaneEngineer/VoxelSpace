@@ -2,7 +2,7 @@ export default class Camera
 {
     x = 537//457//512., // x position on the map
     y = 162//800., // y position on the map
-    height  =  60. // height of the camera
+    height  =  150. // height of the camera
     heading =   -3.14 // direction of the camera
     horizonFrac = 0.5 //280., // horizon position (look up and down)
     zNear =   10.   // near clip plane distance
