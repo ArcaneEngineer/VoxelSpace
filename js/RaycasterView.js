@@ -19,7 +19,10 @@ class RaycasterView// extends CanvasView
     map = undefined
     mapView = undefined
    
-    renderNovalogic = 0//false
+    renderNovalogic = 4//false
+    
+    rays = undefined
+    zBufRay = undefined
     
     constructor(fpsTime, mapView)
     {
@@ -43,6 +46,21 @@ class RaycasterView// extends CanvasView
         this.bufarray = new ArrayBuffer(screenwidth * screenheight * 4);
         this.buf8     = new Uint8Array (this.bufarray);
         this.buf32    = new Uint32Array(this.bufarray);
+        
+        let zBufLen = xRes / 2 > 1024 / 2 ? xRes / 2 : 1024 / 2; //512 minimum
+        this.zBufRay = new Uint8Array(zBufLen); //bytes / max height for loaded heightmaps
+        let rays = this.rays = new Float32Array(zBufLen * 4 * 2); //4 sides of screen, 2 components per vector
+        let heading = 0;
+        const numRays = 918 * 4; //4096
+        const headingIncr = Math.PI * 2 / numRays;
+        
+        for (let r = 0; r < numRays; r++)
+        {
+            rays[r*2+0] = Math.sin(heading)
+            rays[r*2+1] = Math.cos(heading);
+            heading += headingIncr;
+        }
+        
         
         this.ymin = new Int32Array(screenwidth);
         
@@ -70,6 +88,7 @@ class RaycasterView// extends CanvasView
             case 1: this.RenderTerrainSolid    (camera, map, screenwidth, screenheight, this.canvas); break;
             case 2: this.RenderTerrainSurface  (camera, map, screenwidth, screenheight, this.canvas); break;
             case 3: this.RenderTerrainOverhang (camera, map, screenwidth, screenheight, this.canvas); break;
+            case 4: this.RenderTerrainOverview (camera, map, screenwidth, screenheight, this.canvas); break;
             //default: this.ClearScreen(this.canvas);
         }
         
@@ -453,6 +472,100 @@ class RaycasterView// extends CanvasView
         
     }
     
+    
+    RenderTerrainOverview(camera, map, screenwidth, screenheight)
+    {
+        let backgroundcolor = this.backgroundcolor;
+        let deltaz = 1.;
+        let buf32 = this.buf32;
+                
+        let mapwidthperiod  = map.width - 1;
+        let mapheightperiod = map.height - 1;
+        let mapaltitude = map.altitude;
+        let mapcolor = map.color;
+        let mapshift = map.shift;
+        let mapStoreSamples = this.mapView.storeSamples;
+        let mapSamples = this.mapView.samples;
+        
+        if (mapStoreSamples)
+        {
+            for (let i = 0; i < 1024 * 1024; i++)
+                mapSamples[i] = 0;
+        }
+        
+        // Render from front to back
+        let camheight = camera.height;
+        let camx = camera.x;
+        let camy = camera.y;
+        let heading = camera.heading;
+        let yk = camera.yk;
+        let columnscale = camera.columnscale;
+        let perspective = camera.perspective;
+        let rayStepAccl = camera.rayStepAccl;
+        let zNearClip = camera.zNear; //there may be another zNear for projection
+        let zFarClip  = camera.zFar;
+        let nearWidth = camera.nearWidth;
+        let aspectRatio = camera.screenwidth / camera.screenheight;
+        let aspectRatioScaledToNear = (screenwidth / nearWidth) * aspectRatio;
+        
+        let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
+        
+        let xRes = screenwidth;
+        let yRes = screenheight;
+        
+        let zmul = 1 / 1.008;
+        
+        //rays are spread outward radially
+        //TODO create array matching 918x918 (918*4 - 4)
+        //TODO later it may be better to calc rays on the fly as offsets within [0..screenwidth-1, 0..screenheight-1] (need conversion to world space however)
+        let zBufRay = this.zBufRay;
+        let rays = this.rays;
+        const rayslength = rays.length;
+        for (let r = 0; r < rayslength; r++)
+        {
+            //copy normalised values out (don't affect source array)
+            let rnx = rays[r*2+0];
+            let rny = rays[r*2+1];
+            
+            //write from edges to centre of screen: allows overhangs per ray
+            //since the outer part is written first, which is then overwritten
+            //by cols that are more toward centre.
+            for (let z = 30; z > 1; z -= 0.1)
+            //for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
+            {
+                //step according to distance
+                let mapdx = rnx * z;
+                let mapdy = rny * z;
+                
+                //2D map / world coords
+                let maplx = camx + mapdx;
+                let maply = camy + mapdy;
+                
+                //1D map coords: cheap modulo wrap on x & y + upshift y.
+                let mapoffset = ((Math.floor(maply) & mapwidthperiod) << mapshift) + (Math.floor(maplx) & mapheightperiod);
+                mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0; //for overhead minimap
+                
+                let colheight = mapaltitude[mapoffset];
+                let relheight = (camheight - colheight); //for top down orientation, this is camera z!
+                
+                let invz = aspectRatioScaledToNear / relheight;
+                //assumes same x and y screen size TODO use separate "horizon"
+                let scrx = (mapdx) * invz + horizon|0; 
+                let scry = (mapdy) * invz + horizon|0;
+                //DRAW
+                let bufoffset = scry * xRes + scrx; //1D index into screen buffer
+                let color = mapcolor[mapoffset];
+                buf32[bufoffset] = color;
+                
+                //console.log(bufoffset)
+                
+            }
+        }
+        
+        //this.lineNoDiag(100, 100, 550, 300, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+        
+    }
+    
     RenderTerrainSurface(camera, map, screenwidth, screenheight)
     {
         let backgroundcolor = this.backgroundcolor;
@@ -770,6 +883,7 @@ class RaycasterView// extends CanvasView
                 //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
                 for (let k = ytop; k < ybot; k++)
                 {
+                    //As we walk up, we need to check if an int index into world space col is 0, if so, it's transparent.
                     heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
                     
                     buf32[bufoffset]  = 
