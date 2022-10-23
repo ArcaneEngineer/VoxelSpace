@@ -514,6 +514,7 @@ class RaycasterView// extends CanvasView
         let yRes = screenheight;
         
         let zmul = 1 / 1.008;
+        let radius = 200;
         
         //rays are spread outward radially
         //TODO create array matching 918x918 (918*4 - 4)
@@ -528,8 +529,8 @@ class RaycasterView// extends CanvasView
             let rny = rays[r*2+1];
             
             //step according to distance
-            let mapdx = rnx * 30;
-            let mapdy = rny * 30;
+            let mapdx = rnx * radius;
+            let mapdy = rny * radius;
             
             //2D map / world coords
             let maplx = camx + mapdx;
@@ -545,8 +546,8 @@ class RaycasterView// extends CanvasView
             let invz = aspectRatioScaledToNear / relheight;
                 
             //assumes same x and y screen size TODO use separate "horizon"
-            let lastscrx = parseInt((mapdx) * invz + horizon|0),
-                lastscry = parseInt((mapdy) * invz + horizon|0),
+            let lastscrx = /*parseInt*/((mapdx) * invz + horizon|0),
+                lastscry = /*parseInt*/((mapdy) * invz + horizon|0),
                 //lastoffset = 0,
                 lastcolor = 0; //white?
             
@@ -555,7 +556,7 @@ class RaycasterView// extends CanvasView
             //write from edges to centre of screen: allows overhangs per ray
             //since the outer part is written first, which is then overwritten
             //by cols that are more toward centre.
-            for (let z = 30; z > 1; z -= 0.1)
+            for (let z = radius; z > 1; z -= 0.1)
             //for (let z = zNearClip; z < zFarClip; z *= 1.008) //for each ray step / slice
             {
                 //step according to distance
@@ -575,8 +576,8 @@ class RaycasterView// extends CanvasView
                 
                 invz = aspectRatioScaledToNear / relheight;
                 //assumes same x and y screen size TODO use separate "horizon"
-                scrx = parseInt((mapdx) * invz + horizon|0); 
-                scry = parseInt((mapdy) * invz + horizon|0);
+                scrx = /*parseInt*/((mapdx) * invz + horizon|0); 
+                scry = /*parseInt*/((mapdy) * invz + horizon|0);
                 
                 //PLOT THE NEW POINT
                 let bufoffset = scry * xRes + scrx; //1D index into screen buffer
@@ -586,9 +587,9 @@ class RaycasterView// extends CanvasView
                 
                 //DRAG LINE FROM LAST POINT
                 
-                if (Math.abs(lastscrx - scrx) + Math.abs(lastscry - scry) > 2)
+                //if (Math.abs(lastscrx - scrx) + Math.abs(lastscry - scry) > 2)
                 {
-                    this.line(lastscrx, lastscry, scrx, scry, lastcolor);
+                    //this.line(lastscrx, lastscry, scrx, scry, lastcolor);
                 }
                 
                 lastscrx = scrx;
@@ -967,11 +968,11 @@ class RaycasterView// extends CanvasView
         let xRes = this.camera.screenwidth;
         
         //note: all integers!
-        let xDist = parseInt( Math.abs(x1 - x0));
-        let yDist = parseInt(-Math.abs(y1 - y0));
-        let xStep = parseInt(x0 < x1 ? +1 : -1);
-        let yStep = parseInt(y0 < y1 ? +1 : -1);
-        let error = parseInt(xDist + yDist);
+        let xDist = /*parseInt*/( Math.abs(x1 - x0));
+        let yDist = /*parseInt*/(-Math.abs(y1 - y0));
+        let xStep = /*parseInt*/(x0 < x1 ? +1 : -1);
+        let yStep = /*parseInt*/(y0 < y1 ? +1 : -1);
+        let error = /*parseInt*/(xDist + yDist);
         
         while (true)
         {
@@ -1000,37 +1001,37 @@ class RaycasterView// extends CanvasView
     
     //https://stackoverflow.com/questions/8936183/bresenham-lines-w-o-diagonal-movement
     //https://stackoverflow.com/questions/35422997/understanding-bresenhams-error-accumulation-part-of-the-algorithm
-    lineNoDiag(x0, y0, x1, y1, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift)
+    lineNoDiag(x0, y0, x1, y1, color)
     {
-        //what about a fractional start pos? we will need to test moving camera
-        //in tiny increments.
-        //it won't support that by default as this is an all-integer implementation.
-        //we'll need to floatify it (no) or use fixed point integer values.
+        let buf32 = this.buf32;
+        let xRes = this.camera.screenwidth;
         
-        let xDist =  Math.abs(x1 - x0);
-        let yDist = -Math.abs(y1 - y0);
-        let xStep = (x0 < x1 ? +1 : -1);
-        let yStep = (y0 < y1 ? +1 : -1);
-        let error = xDist + yDist;
+        //note: all integers!
+        let xDist = /*parseInt*/( Math.abs(x1 - x0));
+        let yDist = /*parseInt*/(-Math.abs(y1 - y0));
+        let xStep = /*parseInt*/(x0 < x1 ? +1 : -1);
+        let yStep = /*parseInt*/(y0 < y1 ? +1 : -1);
+        let error = /*parseInt*/(xDist + yDist);
 
-        this.plot(x0, y0, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
-
-        while (x0 != x1 || y0 != y1)
+        while (true)//(x0 != x1 || y0 != y1)
         {
             if (2*error - yDist > xDist - 2*error)
             {
+                if (x0 == x1) break;
                 // horizontal step
                 error += yDist;
                 x0 += xStep;
             }
             else
             {
+                if (y0 == y1) break;
                 // vertical step
                 error += xDist;
                 y0 += yStep;
             }
 
-            this.plot(x0, y0, camx, camy, mapwidthperiod, mapheightperiod, mapSamples, mapshift);
+            let bufoffset = y0 * xRes + x0; //1D index into screen buffer
+            buf32[bufoffset] = color;
         }
     }
 
