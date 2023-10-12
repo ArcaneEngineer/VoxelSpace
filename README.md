@@ -21,7 +21,7 @@ Raycasters in general were not just the work of one person, but of several great
 
 These images  show how non-linear sampling allows for fine-grained voxel / cubic detail near the camera, while heightmap sampling is less intense and thus more performant further away. As can also be seen, besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment via sliders of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more.
 
-# Voxel Space
+# Voxel Space (original README by Sebastian Macke)
 
 ![web demonstration](images/webdemo.gif)
 
