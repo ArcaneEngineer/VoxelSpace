@@ -10,6 +10,8 @@ Goals for this fork:
 
 2. Explore possibility of adapting this renderer to solve the problems which Ken Silverman's phenonmenal [Voxlap Engine](http://advsys.net/ken/voxlap.htm) solved: Using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down, while supporting terrain overhangs (caves, tunnels).
 
+3. Include a toggleable minimap showing the 2D rays being marched along the heightmap terrain, their lengths, spread angle, and sample points. (was working, currently broken)
+
 ![front to back rendering](images/nonlinearsampling1.png)
 ![front to back rendering](images/nonlinearsampling2.png)
 
