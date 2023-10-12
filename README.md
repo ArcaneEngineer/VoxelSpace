@@ -1,10 +1,14 @@
 # 2023 High-Performance Updates by Arcane Engineer
 
+## Intro
+
 (NOTE: /master may be slightly broken for the moment but in fact by changing the renderer via onscreen dropdown, you can view the running algorithm. Not all sliders work in all modes of the renderer. This should be fixed in the remaining weeks of 2023.)
 
-My regards to Sebastian Macke for reverse-engineering and releasing the original repository showcasing this old, but incredibly efficient technology developed by (as I understand from now-expired patent documents) Kyle G. Freeman, formerly of NovaLogic. Raycasters in general were not just the work of one person, but of several great minds of the era (late 1980's-1990s), including most notably John Carmack and Ken Silverman; in developing this codebase further, my attention is not specifically limited to NovaLogic, but draws from all sources. While we nowadays have the ability to do hardware-native raytracing (per pixel / fragment) via GPUs like Nvidia's RTX, this does not change the fact that such older tech can be made to run exceedingly fast on newer hardware and may still have uses. One benefit of such technology that I admire is the ability to render extenside heightmap terrains without any need for (dynamic) mesh construction and upload to the GPU as seen in modern, triangle-based voxel games (e.g. Minecraft). This can greatly speed up dev times for indie developers and small studios looking to get a feel for a dynamic terrain without going to extensive efforts (caveat: terrains overhangs may not be supported).
+My sincere regards to Sebastian Macke for reverse-engineering and releasing the original repository showcasing this old, but incredibly efficient technology developed by (as I understand from now-expired patent documents) Kyle G. Freeman, formerly of NovaLogic.
 
-Goals for this fork:
+Raycasters in general were not just the work of one person, but of several great minds of the era (late 1980's-1990s), including most notably John Carmack and Ken Silverman; in developing this codebase further, my attention is not specifically limited to NovaLogic, but draws from all sources. While we nowadays have the ability to do hardware-native raytracing (per pixel / fragment) via GPUs like Nvidia's RTX, this does not change the fact that such older tech can be made to run exceedingly fast on newer hardware and may still have uses. One benefit of such technology that I admire is the ability to render extenside heightmap terrains without any need for (dynamic) mesh construction and upload to the GPU as seen in modern, triangle-based voxel games (e.g. Minecraft). This can greatly speed up dev times for indie developers and small studios looking to get a feel for a dynamic terrain without going to extensive efforts (caveat: terrains overhangs may not be supported).
+
+## Goals
 
 1. To push performance limits usign modern hardware. Parallelize by using multiple worker threads or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad. Vectorisation of operations will also help.
 
