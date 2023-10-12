@@ -21,7 +21,7 @@ One benefit of such technology is the ability to render extensive heightmap terr
 ![front to back rendering](images/nonlinearsampling1.png)
 ![front to back rendering](images/nonlinearsampling2.png)
 
-These images  show how non-linear sampling allows for fine-grained voxel / cubic detail near the camera, while heightmap sampling is less intense and thus more performant further away. As can also be seen, besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment via sliders of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more.
+These images  show how non-linear sampling allows for fine-grained voxel / cubic detail near the camera, while heightmap sampling is less intense and thus more performant further away. As can also be seen, besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment via sliders of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more. Instead, the basic heightmap (with or without color data) from which meshes are usually derived, and which is anyway needed for game / simulation logic can be uploaded directly and used by the renderer.
 
 # Voxel Space (original README by Sebastian Macke)
 
