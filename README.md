@@ -12,11 +12,11 @@ One benefit of such technology is the ability to render extensive heightmap terr
 
 ## Goals
 
-1. To push performance limits usign modern hardware. Parallelize by using multiple worker threads or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad. Vectorisation of operations will also help.
-
+1. Push performance limits using modern hardware. Parallelize by using multiple worker threads or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad. Vectorise arithmetic ops e.g. in shaders.
+  
 2. Explore possibility of adapting this renderer to solve the problems which Ken Silverman's phenonmenal [Voxlap Engine](http://advsys.net/ken/voxlap.htm) solved: Using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down, while supporting terrain overhangs (caves, tunnels).
 
-3. Include a toggleable minimap showing the 2D rays being marched along the heightmap terrain, their lengths, spread angle, and sample points. (was working, currently broken)
+3. Include a toggleable minimap showing the 2D rays being marched along the heightmap terrain, their lengths, spread angle, and sample points. This assists understanding for both beginners and those actively working on their own raycasters (as info used for debugging).
 
 ![front to back rendering](images/nonlinearsampling1.png)
 ![front to back rendering](images/nonlinearsampling2.png)
