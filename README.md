@@ -1,6 +1,6 @@
-# 2023 High-Performance Update (in the pipeline) by Arcane Engineer
+# 2023 High-Performance Updates by Arcane Engineer
 
-My deepest regards go to Sebastian Macke for releasing the original repository showcasing this old, but incredibly efficient technology developed by (as I understand from now-expired patent documents) Kyle G. Freeman, formerly of NovaLogic.
+My regards to Sebastian Macke for releasing the original repository showcasing this old, but incredibly efficient technology developed by (as I understand from now-expired patent documents) Kyle G. Freeman, formerly of NovaLogic.
 
 While we nowadays have the ability to do hardware-native raytracing (per pixel / fragment) via GPUs like Nvidia's RTX, this does not change the fact that such older tech -- without which early 3D games in the 1990s and 2000s would not have been possible -- can be made to run exceedingly fast on newer hardware.
 
