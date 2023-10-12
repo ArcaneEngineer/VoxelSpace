@@ -1,3 +1,15 @@
+# 2023 High-Performance Update (in the pipeline) by Arcane Engineer
+
+My deepest regards go to Sebastian Macke for releasing the original repository showcasing this old, but incredibly efficient technology developed by (as I understand from now-expired patent documents) Kyle G. Freeman, formerly of NovaLogic.
+
+While we nowadays have the ability to do hardware-native raytracing (per pixel / fragment) via GPUs like Nvidia's RTX, this does not change the fact that such older tech -- without which early 3D games in the 1990s and 2000s would not have been possible -- can be made to run exceedingly fast on newer hardware.
+
+My primary goal for this fork is to push to the limit the basic technologies used for early first-person 3D games of the 1990s which I was weaned on: raycaster such as Wolfenstein, Doom, Hexen, Rise of the Triads, and of course the famous NovaLogic games such as Comanche. This can be done by either parallelizing by multiple worker threads (probably not worth the effort) or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad.
+
+My secondary goal (a longshot) is to see whether it is possible to gradually adapt this codebase to solve the problems which Ken Silverman's Voxlap Engine solved -- that is, using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down -- also know as 6DoF (Degress of Freedom) raycaster.
+
+Besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more.
+
 # Voxel Space
 
 ![web demonstration](images/webdemo.gif)
