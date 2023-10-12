@@ -25,7 +25,7 @@
             width: fit-content;
 			z-index:2;
 			
-            color: white;
+            color: black;
             font-family: "Arial", Times, serif;
             font-size: 100%;
             }
@@ -36,7 +36,7 @@
             padding: 0px;
 			margin: 0px;
             z-index:2;
-            color: white;
+            color: black;
             font-family: "Arial", Times, serif;
             font-size: 100%;
             }
@@ -48,11 +48,22 @@
             right: 10px;
             z-index:100;
             padding: 5px;
-            color: white;
+            color: black;
             font-family: "Arial", Times, serif;
             font-size: 100%;
             }
-		
+		#renderer
+		{
+			position: absolute;
+            top: 0px;
+            right: 0px;
+            padding: 0px;
+			margin: 0px;
+            z-index:2;
+            color: black;
+            font-family: "Arial", Times, serif;
+            font-size: 100%;
+		}
 		[data-tooltip]
 		{
 			color: black;
@@ -189,13 +200,14 @@
 
 </div>
 
-    <select id="renderer">
-        <option value="0" selected>Novalogic (forward raymarch, non-linear sampling)</option>
-        <option value="1"         >Solid F2B (forward raymarch)</option>
-        <option value="2"         >Surface B2F (backward raymarch, draw upper surfaces only)</option>
-        <option value="3"         >Overhang B2F (backward raymarch, slow! allows overhangs)</option>
-        <option value="4"         >Radar view (adjust height slider till looks solid)</option>
-    </select>
+
+<select id="renderer">
+	<option value="0" selected>Novalogic (forward raymarch, non-linear sampling)</option>
+	<option value="1"         >Solid F2B (forward raymarch)</option>
+	<option value="2"         >Surface B2F (backward raymarch, draw upper surfaces only)</option>
+	<option value="3"         >Overhang B2F (backward raymarch, slow! allows overhangs)</option>
+	<option value="4"         >Radar view (adjust height slider till looks solid)</option>
+</select>
 
 <!-- <div id="fps" style="position: absolute; display: block; bottom: 0px; right: 0px;> -->
 <!-- </div> -->
