@@ -6,7 +6,7 @@ My regards to Sebastian Macke for reverse-engineering and releasing the original
 
 Goals for this fork:
 
-1. To push to the limit the basic technologies used for early first-person 3D games of the 1990s which I was weaned on: raycaster such as Wolfenstein, Doom, Hexen, Rise of the Triads, Duke Nukem 3D, and the famous NovaLogic games such as Comanche. This can be done by either parallelizing by multiple worker threads (probably not worth the effort) or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad.
+1. To push performance limits usign modern hardware. Parallelize by using multiple worker threads or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad. Vectorisation of operations will also help.
 
 2. Explore possibility of adapting this renderer to solve the problems which Ken Silverman's phenonmenal [Voxlap Engine](http://advsys.net/ken/voxlap.htm) solved: Using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down, while supporting terrain overhangs (caves, tunnels).
 
