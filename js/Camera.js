@@ -11,7 +11,7 @@ export default class Camera
     yk = 0.866//0.7071, //45deg
     hFov = 1.57079633
     nearWidth = 1.
-    columnscale = 1.
+    columnscale = 2.
     perspective = true
     rayStepAccl = 0.005
     //optional, could be pulled from offscreen canvas instead.

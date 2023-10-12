@@ -295,7 +295,9 @@ export default class Io
     onChangeColumnScale(e)
     {
         let camera = this.camera;
-        camera.columnscale = e.currentTarget.valueAsNumber;
+        //TODO fix - must be either one or the other!
+		camera.columnscale = e.currentTarget.valueAsNumber;
+        controls.columnscale = e.currentTarget.valueAsNumber;
     }
     
     onChangePitch(e)
@@ -323,7 +325,6 @@ export default class Io
     
     onChangeRenderer(e)
     {
-        console
         this.gameCore.renderNovalogic = e.currentTarget.selectedIndex;
         //map.updateScale(); //would be more performant but worse structured.
     }

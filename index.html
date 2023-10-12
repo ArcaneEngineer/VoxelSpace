@@ -12,13 +12,35 @@
         #info {
             position: absolute;
             bottom: 0px;
-            width: 25%;
             padding: 5px;
             z-index:2;
             color: white;
             font-family: "Arial", Times, serif;
-            font-size: 120%;
+            font-size: 100%;
             }
+        #controls {
+            position: absolute;
+            bottom: 0px;
+            padding: 5px;
+            width: fit-content;
+			z-index:2;
+			
+            color: white;
+            font-family: "Arial", Times, serif;
+            font-size: 100%;
+            }
+		#instructions {
+            position: absolute;
+            top: 0px;
+            width: 100%;
+            padding: 0px;
+			margin: 0px;
+            z-index:2;
+            color: white;
+            font-family: "Arial", Times, serif;
+            font-size: 100%;
+            }
+		#instructions p {padding: 0; margin: 0;}
         #fps {
             float: right;
             position: absolute;
@@ -28,8 +50,37 @@
             padding: 5px;
             color: white;
             font-family: "Arial", Times, serif;
-            font-size: 120%;
+            font-size: 100%;
             }
+		
+		[data-tooltip]
+		{
+			color: black;
+			font-size: 100%;
+			width: fit-content;
+		}
+		[data-tooltip]::before
+		{
+			position : absolute;
+			content : attr(data-tooltip);
+			opacity : 0;
+		}
+		[data-tooltip]:hover::before
+		{
+			opacity : 1;
+			font-size: 70%;
+			background-color: yellow;
+		}
+		[data-tooltip]:not([data-tooltip-persistent])::before
+		{
+			pointer-events: none;
+		}
+		div.control
+		{
+			background-color: gray;
+			width: fit-content;
+			overflow:hidden;
+		}
         *
         {
             user-select: none
@@ -37,6 +88,7 @@
         label
         {
             display: block;
+			padding-bottom: 0.7em;
         }
     </style>
 </head>
@@ -52,6 +104,10 @@
         <input type="checkbox" id="toggleMap" name="toggleMap" style="display: inline; position: absolute; bottom: 0px; right: 0px; ">
         <input type="checkbox" id="toggleRenderer" name="toggleRenderer" style="display: inline; position: absolute; bottom: 0px; right: 40px; ">
     </div>
+</div>
+
+<div id="instructions">
+	<p>Use WSAD to move along the plane. R &amp; F move up and down. Q &amp; E rotate the camera. Hover over sliders for tooltips explaining purpose. Resizing browser viewport not supported! (set to 100%)</p>
 </div>
 
 <div id="info">
@@ -88,31 +144,58 @@
     <option value="C28W;D25">Map C28W</option>
     <option value="C29W;D16">Map C29W</option>
     </select>
-
-    <label for="zNear">zNear</label><input id="zNear" type="range" min="1" max="1000"value="300" step="1">
-
-    <label for="zFar">zFar</label><input id="zFar" type="range" min="100" max="10000"value="10000" step="1">
-
-    <label for="columnscale">columnscale</label><input id="columnscale" type="range" min="1" max="10" step="0.01">
-
-    <label for="rayStepAccl">rayStepAccl</label><input id="rayStepAccl" type="range" min="0.001" max="1.0" value="0.01" step="0.001">
-    
-    <label for="heading">heading</label><input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001">
-
-    <label for="height">height</label><input id="height" type="range" min="0" max="1000" step="1">
-    
-    <label for="nearWidth">nearWidth</label><input id="nearWidth" type="range" min="0.1" max="12.0" value="1.0" step="0.01">
-    <label for="pitch ">pitch</label><input id="pitch" type="range" min="-1.57" max="1.57" value="0.0" step="0.01">
-    <label for="horizon ">horizon</label><input id="horizon" type="range" min="0" max="1.0" value="0.5" step="0.01">
-    
-    <select id="renderer">
-        <option value="0"         >Novalogic (no FoV adjust)</option>
-        <option value="1"         >Solid F2B</option>
-        <option value="2"         >Surface B2F</option>
-        <option value="3"         >Overhang B2F</option>
-        <option value="4" selected>Overview</option>
-    </select>
 </div>
+<div id="controls">
+	<div class="control" >
+    <label for="nearWidth" data-tooltip="camera near plane width -- adjusts lateral field of view">nearWidth</label><input id="nearWidth" type="range" min="0.1" max="12.0" value="1.0" step="0.01">
+	</div>
+	
+	<div class="control" >
+    <label for="zNear" data-tooltip="camera near cutoff distance">zNear</label><input id="zNear" type="range" min="1" max="1000"value="300" step="1">
+	</div>
+	
+	<div class="control" >
+    <label for="zFar" data-tooltip="camera far cutoff distance">zFar</label><input id="zFar" type="range" min="100" max="10000"value="10000" step="1">
+	</div>
+	
+	<div class="control">
+    <label for="height" data-tooltip="quickly adjust camera height">height</label><input id="height" type="range" min="0" max="1000" step="1">
+    </div>
+	
+	<div class="control" >
+    <label for="columnscale" data-tooltip="scales terrain heightmap vertically">columnscale</label><input id="columnscale" type="range" min="1" max="10" value="1" step="0.01">
+	</div>
+	
+	<div class="control" >
+    <label for="rayStepAccl" data-tooltip="the rate at which the raystep increases, higher values run faster">rayStepAccl</label><input id="rayStepAccl" type="range" min="0.001" max="1.0" value="0.01" step="0.001">
+    </div>
+	
+	<!-- Just hide these for now so we needn't unbind them in the input class. -->
+	<div class="control"  
+		style="visibility: hidden; display: none;" disabled="disabled">
+    <label for="heading" data-tooltip="near camera cutoff distance">heading</label><input id="heading" type="range" min="0.000000" max="6.2831853071" step="0.000001">
+	</div>
+
+	<div class="control" 
+		style="visibility: hidden; display: none;"  disabled="disabled">
+    <label for="pitch" data-tooltip="near camera cutoff distance">pitch</label><input id="pitch" type="range" min="-1.57" max="1.57" value="0.0" step="0.01">
+	</div>
+	
+	<div class="control"
+		sstyle="visibility: hidden; display: none;" disabled="disabled">
+    <label for="horizon"  data-tooltip="near camera cutoff distance">horizon</label><input id="horizon" type="range" min="0" max="1.0" value="0.5" step="0.01">
+    </div>
+	
+
+</div>
+
+    <select id="renderer">
+        <option value="0" selected>Novalogic (forward raymarch, non-linear sampling)</option>
+        <option value="1"         >Solid F2B (forward raymarch)</option>
+        <option value="2"         >Surface B2F (backward raymarch, draw upper surfaces only)</option>
+        <option value="3"         >Overhang B2F (backward raymarch, slow! allows overhangs)</option>
+        <option value="4"         >Radar view (adjust height slider till looks solid)</option>
+    </select>
 
 <!-- <div id="fps" style="position: absolute; display: block; bottom: 0px; right: 0px;> -->
 <!-- </div> -->
