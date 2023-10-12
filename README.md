@@ -6,12 +6,12 @@ Goals for this fork:
 
 1. To push to the limit the basic technologies used for early first-person 3D games of the 1990s which I was weaned on: raycaster such as Wolfenstein, Doom, Hexen, Rise of the Triads, Duke Nukem 3D, and the famous NovaLogic games such as Comanche. This can be done by either parallelizing by multiple worker threads (probably not worth the effort) or by running WebGPU either on the main thread or in a decicated worker thread, computing the results into a buffer, and rendering that to a fullscreen quad.
 
-2. (a longshot!) To see whether it is possible to gradually adapt this codebase to solve the problems which Ken Silverman's phenonmenal [Voxlap Engine](http://advsys.net/ken/voxlap.htm) solved -- that is, using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down -- also know as 6DoF (Degress of Freedom) raycaster. Voxlap supported overhangs (caves, tunnels) in addition, a feature not found in any other heightmap-based, raycasted engines of the pre 3D hardware era. The images below show how non-linear sampling allow for fine-grained detail (tiny cubes or voxels) near the camera, while further away, heightmap sampling is less intense and thus more performant.
+2. To explore possibilities of adapting this renderer to solve the problems which Ken Silverman's phenonmenal [Voxlap Engine](http://advsys.net/ken/voxlap.htm) solved -- that is, using an ostensibly 2D, RLE column marching raycaster to achieve 3D perspective without perspective distortion when looking up and down -- also know as 6DoF (Degress of Freedom) raycaster. Voxlap supported overhangs (caves, tunnels) in addition, a feature not found in any other heightmap-based, raycasted engines of the pre 3D hardware era. The images below show how non-linear sampling allow for fine-grained detail (tiny cubes or voxels) near the camera, while further away, heightmap sampling is less intense and thus more performant. Naturally, this step is a longshot, and will require extensive changes to the rendering algorithm.
 
 ![front to back rendering](images/nonlinearsampling1.png)
 ![front to back rendering](images/nonlinearsampling2.png)
 
-Besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more.
+As can be seen, besides existing optimisations of the software renderer (even without running on the GPU), I have also taken the time to make the original raycaster much more full-featured, including allowing for runtime adjustment via sliders of a conceptual near viewing plane, adjusting the far viewing plane's distance, heightmap height scaling, and more.
 
 # Voxel Space
 
