@@ -6,8 +6,16 @@
     <meta name="description" content="Demonstration of the Voxel Space technique">
     <meta name="keywords" content="Voxel, VoxelSpace, Voxel Space, Comanche, landscape, rendering">
     <style>
-        html, body {margin: 0; height: 100%; overflow: hidden}
+        html, body {margin: 0; height: 100%; /*overflow: hidden*/}
         canvas #firstperson { width: 100%; height: 100%; }
+		#firstperson
+		{
+			image-rendering: pixelated;
+			margin: 0; padding: 0;
+			display: block;
+			z-index: 0;
+			/*transform-origin: top left; transform: rotate(-90deg) translate(-100%, 0);*/ 
+		}
         a { color: white; }
         #info {
             position: absolute;
@@ -105,7 +113,7 @@
 </head>
 
 <body scroll="no">
-<canvas id="firstperson" width="64" height="64" style="width: 640px; height: 640px; image-rendering: pixelated; margin: 0; padding: 0; display: block; z-index: 0;">Your browser does not support the canvas element.</canvas>
+<canvas id="firstperson" width="64" height="64" style="width: 640px; height: 640px;">Your browser does not support the canvas element.</canvas>
 
 <div id="top" style="position: absolute; display: block; bottom: 0px; right: 0px; z-index: 1; opacity: 1.0; visibility: hidden;" >
     <canvas id="map"     width="1024" height="1024" style="width: 1024px; height: 1024px;  margin: 0; padding: 0; z-index: 9; display: block; position: absolute; bottom: 0px; right: 0px; image-rendering: pixelated;"></canvas>
