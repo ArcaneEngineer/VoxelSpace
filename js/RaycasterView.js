@@ -147,15 +147,9 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
                 mapSamples[i] = 0;
         }
 		
-		//SCREEN space init
-		let backgroundcolor = this.backgroundcolor;
-        let deltaz = 1.;
+	//SCREEN space init
+	let backgroundcolor = this.backgroundcolor;
         let buf32 = this.buf32;
-        
-        //let screenwidth  = this.canvas.width|0;
-        //let screenheight = this.canvas.height;
-        
-        let ymin = screenheight;
 		
         // Render from front to back
         let camheight = camera.height;
@@ -211,8 +205,6 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
         const zmul = 1 / 1.008;
         for (let x = 0; x < xRes; x++) //for each screen column
         {
-            ymin = screenheight
-			
             let z = 0;
             for (z = zFarClip; z > 1; z *= zmul) //world space z stepping / raymarch
             {
