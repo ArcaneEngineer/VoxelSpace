@@ -204,16 +204,13 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
         const zmul = 1 / 1.008;
         for (let x = 0; x < xRes; x++) //for each screen column
         {
-            let z = 0;
-            for (z = zFarClip; z > 1; z *= zmul) //world space z stepping / raymarch
+            for (let z = zFarClip; z > 1; z *= zmul) //world space z stepping / raymarch
             {
-				//WORLD SPACE
-                let zz = z// * z; 
-				let zReal = zz; //z + shift
+		//WORLD SPACE
 				
                 //forward step increment in WORLD space
-                let mapdx = raynearx * zz;
-                let mapdy = rayneary * zz;
+                let mapdx = raynearx * z;
+                let mapdy = rayneary * z;
                 
                 //2D map / world coords
                 let maplx = camx + mapdx;
@@ -230,13 +227,13 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
 				
 				//SCREEN SPACE
                 //draw vertical....
-                let zzz = zReal / aspectRatioScaledToNear;
-                let invz = aspectRatioScaledToNear / zReal;//zz;//(yk / zz) * (screenheight / nearWidth);
+                //let zzz = z / aspectRatioScaledToNear;
+                let invzzz = aspectRatioScaledToNear / z;//zz;//(yk / zz) * (screenheight / nearWidth);
 				
-                let ytop = ((relheight ) * invz + horizon)|0;
-                let ybot = (((relheight + 1) ) * invz + horizon)|0;
+                let ytop = ((relheight ) * invzzz + horizon)|0;
+                let ybot = (((relheight + 1) ) * invzzz + horizon)|0;
                 
-				//let flag = 1//ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
+				//let flag = 1//ytop <= ybot ? 1 : 0;
 				
                 ytop = ytop < 0 ? 0 : ytop;   
                 ybot = ybot > screenheight ? screenheight : ybot;
@@ -250,7 +247,7 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
                 //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
                 for (let k = ytop; k < ybot; k++)
                 {
-                    //heightOnCol = camheight - (k - horizon) * zzz; // / (invz);
+                    //heightOnCol = camheight - (k - horizon) * zzz; // / (invzzz);
                     
                     buf32[bufoffset] = color;
 					
