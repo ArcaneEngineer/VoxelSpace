@@ -201,7 +201,6 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
         let raynearx = lx;
         let rayneary = ly;
         
-        const rayStepJolt = 0.1;
         const zmul = 1 / 1.008;
         for (let x = 0; x < xRes; x++) //for each screen column
         {
