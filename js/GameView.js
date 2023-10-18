@@ -110,16 +110,16 @@ export default class GameView
 	setDimensions(raycastercanvas)
 	{
 			
-		raycastercanvas.width        = window.innerWidth//window.innerWidth;
-        raycastercanvas.height       = window.innerHeight//raycastercanvas.width / aspect;
-        raycastercanvas.style.width  = window.innerWidth  + "px";
-        raycastercanvas.style.height = window.innerHeight + "px";
+		// raycastercanvas.width        = window.innerWidth//window.innerWidth;
+        // raycastercanvas.height       = window.innerHeight//raycastercanvas.width / aspect;
+        // raycastercanvas.style.width  = window.innerWidth  + "px";
+        // raycastercanvas.style.height = window.innerHeight + "px";
 		
 		//FLIPPED FOR COL-ALIGNED (COL-MAJOR) TEXTURE MEMORY SUITED TO RAYCASTER. 
-		// raycastercanvas.width        = window.innerHeight
-        // raycastercanvas.height       = window.innerWidth
-        // raycastercanvas.style.width  = window.innerHeight  + "px";
-        // raycastercanvas.style.height = window.innerWidth + "px";
+		raycastercanvas.width        = window.innerHeight
+        raycastercanvas.height       = window.innerWidth
+        raycastercanvas.style.width  = window.innerHeight  + "px";
+        raycastercanvas.style.height = window.innerWidth + "px";
 	}
 
 }

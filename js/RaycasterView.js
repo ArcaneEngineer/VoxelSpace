@@ -36,33 +36,30 @@ class RaycasterView// extends CanvasView
     OnResizeWindow(raycasteroffscreencanvas, mapoffscreencanvas, samplesoffscreencanvas, screenwidth, screenheight, map)
     {
         console.log("RaycasterView.OnResizeWindow");
-
+		console.log(screenwidth, screenheight);
         let xRes = this.xRes = screenwidth //raycasteroffscreencanvas.width;//core.rayCaster.colCount;
         let yRes = this.yRes = screenheight//raycasteroffscreencanvas.height;//core.rayCaster.rowCount;
         
         this.context   = raycasteroffscreencanvas.getContext("2d");
-        this.imagedata = this.context.createImageData(screenwidth, screenheight);
+        this.imagedata = this.context.createImageData(screenheight, screenwidth); //FLIPPED X & Y!
 
         this.bufarray = new ArrayBuffer(screenwidth * screenheight * 4);
         this.buf8     = new Uint8Array (this.bufarray);
         this.buf32    = new Uint32Array(this.bufarray);
         
+		//For overview mode (only) - as of Oct 2023.
         let zBufLen = xRes / 2// > 1024 / 2 ? xRes / 2 : 1024 / 2; //512 minimum
-        this.zBufRay = new Uint8Array(zBufLen); //bytes / max height for loaded heightmaps
-        const numRays = 918 * 4; //4096 //xRes * 2 + yRes * 2
+        this.zBufRay = new Uint8Array(zBufLen); //bytes / max height for loaded heightmaps 
+		const numRays = 918 * 4; //4096 //xRes * 2 + yRes * 2
         let rays = this.rays = new Float32Array(numRays * 2); //4 sides of screen, 2 components per vector
         let heading = 0;
         const headingIncr = Math.PI * 2 / numRays;
-        
         for (let r = 0; r < numRays; r++)
         {
             rays[r*2+0] = Math.sin(heading)
             rays[r*2+1] = Math.cos(heading);
             heading += headingIncr;
         }
-        
-        
-        this.ymin = new Int32Array(screenwidth);
         
         this.mapView.core = map;
         this.mapView.setMapAndSamplesCanvas(mapoffscreencanvas, samplesoffscreencanvas);
@@ -78,23 +75,23 @@ class RaycasterView// extends CanvasView
         let core = this.core;
         let camera = this.camera;
         let map = this.map;
-        let screenwidth = camera.screenwidth;
-        let screenheight = camera.screenheight;
+        let xRes = camera.screenheight;
+        let yRes = camera.screenwidth;
         
         //TODO use func table
         switch (this.renderNovalogic)
         {
-            case 0: this.RenderTerrainNovalogic(camera, map, screenwidth, screenheight, this.canvas); break;
-            case 1: this.RenderTerrainSolid    (camera, map, screenwidth, screenheight, this.canvas); break;
-            case 2: this.RenderTerrainSurface  (camera, map, screenwidth, screenheight, this.canvas); break;
-            case 3: this.RenderTerrainOverhang (camera, map, screenwidth, screenheight, this.canvas); break;
-            case 4: this.RenderTerrainOverview (camera, map, screenwidth, screenheight, this.canvas); break;
+            case 0: this.RenderTerrainNovalogic(camera, map, xRes, yRes, this.canvas); break;
+            case 1: this.RenderTerrainSolid    (camera, map, xRes, yRes, this.canvas); break;
+            case 2: this.RenderTerrainSurface  (camera, map, xRes, yRes, this.canvas); break;
+            case 3: this.RenderTerrainOverhang (camera, map, xRes, yRes, this.canvas); break;
+            case 4: this.RenderTerrainOverview (camera, map, xRes, yRes, this.canvas); break;
             //default: this.ClearScreen(this.canvas);
         }
         
         this.Flip();
         
-        this.mapView.update(screenwidth, 20); //TODO fix hacked in 20! (precalc steps on change?)
+        this.mapView.update(camera.screenwidth, 20); //TODO fix hacked in 20! (precalc steps on change?)
         /*
         //TODO put into a UI view class
         if (this.timeAccumulated >= 1000)
@@ -131,7 +128,7 @@ class RaycasterView// extends CanvasView
         for (let i = 0; i < buf32.length; i++) buf32[i] = backgroundcolor|0;
     }
 	
-RenderTerrainSurface(camera, map, screenwidth, screenheight)
+RenderTerrainSurface(camera, map, xRes, yRes)
     {
 		//WORLD space init
         let mapwidthperiod  = map.width - 1;
@@ -147,8 +144,8 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
                 mapSamples[i] = 0;
         }
 		
-	//SCREEN space init
-	let backgroundcolor = this.backgroundcolor;
+		//SCREEN space init
+		let backgroundcolor = this.backgroundcolor;
         let buf32 = this.buf32;
 		
         // Render from front to back
@@ -164,14 +161,14 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
         let zFarClip  = camera.zFar;
         let nearWidth = camera.nearWidth;
         let aspectRatio = camera.screenwidth / camera.screenheight;
-        let aspectRatioScaledToNear = (screenwidth / nearWidth) * aspectRatio;
+        let aspectRatioScaledToNear = (camera.screenwidth / nearWidth) * aspectRatio; //camera yes or no?
 
         let halfNearWidth = nearWidth / 2;
-        let halfNearWidthScaled = halfNearWidth * (map.width / screenwidth);
+        let halfNearWidthScaled = halfNearWidth * (map.width / camera.screenwidth); //camera yes or no?
 
-        let horizon = screenheight * camera.horizonFrac;//camera.horizon|0;
+        let horizon = camera.screenheight * camera.horizonFrac;//camera.horizon|0;
         
-        //NOTE! implicit or explicit *1 projection plane distance!
+		//NOTE! implicit or explicit *1 projection plane distance!
         const zNearProj = 1;//zFarClip//1.;
         let cx = Math.sin(heading) * zNearProj;
         let cy = Math.cos(heading) * zNearProj;
@@ -190,23 +187,20 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
         let dx = rx - lx;
         let dy = ry - ly;
         
-        let xRes = screenwidth;
-        let yRes = screenheight;
-        
         //fractional step
-        let sx = dx / xRes;
-        let sy = dy / xRes;
+        let sx = dx / camera.screenwidth;//xRes;
+        let sy = dy / camera.screenwidth;//xRes;
         
         //what is the position on the near plane? (changes)
         let raynearx = lx;
         let rayneary = ly;
         
         const zmul = 1 / 1.008;
-        for (let x = 0; x < xRes; x++) //for each screen column
+        for (let x = 0; x < camera.screenwidth; x++) //for each screen column
         {
             for (let z = zFarClip; z > 1; z *= zmul) //world space z stepping / raymarch
             {
-		//WORLD SPACE
+				//WORLD SPACE
 				
                 //forward step increment in WORLD space
                 let mapdx = raynearx * z;
@@ -230,28 +224,29 @@ RenderTerrainSurface(camera, map, screenwidth, screenheight)
                 //let zzz = z / aspectRatioScaledToNear;
                 let invzzz = aspectRatioScaledToNear / z;//zz;//(yk / zz) * (screenheight / nearWidth);
 				
-                let ytop = ((relheight ) * invzzz + horizon)|0;
-                let ybot = (((relheight + 1) ) * invzzz + horizon)|0;
+                let ybot = ((relheight + 0 ) * invzzz + horizon)|0;
+                let ytop = ((relheight + 1 ) * invzzz + horizon)|0;
                 
 				//let flag = 1//ytop <= ybot ? 1 : 0;
 				
-                ytop = ytop < 0 ? 0 : ytop;   
-                ybot = ybot > screenheight ? screenheight : ybot;
+                ybot = ybot < 0 ? 0 : ybot;   
+                ytop = ytop > xRes ? xRes : ytop;
                 
-				let bufoffset = ytop * xRes + x; //1D index into screen buffer
+				let bufoffset = ytop + xRes * x; //1D index into screen buffer
+				//let bufoffset = ytop * xRes + x; //1D index into screen buffer
 				//let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 let color = mapcolor[mapoffset];
                 let heightOnCol = 0;
                 
                 //TODO if writing row-wise (unfragmented) we could count the number of this color, then use a memset to cover multiple pixels at once -
                 //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
-                for (let k = ytop; k < ybot; k++)
+                for (let k = ybot; k < ytop; k++)
                 {
                     //heightOnCol = camheight - (k - horizon) * zzz; // / (invzzz);
                     
                     buf32[bufoffset] = color;
 					
-                    bufoffset += xRes; //flag// * xRes;
+                    bufoffset += 1;//xRes; //flag// * xRes;
                 }
             }
             
