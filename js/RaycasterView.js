@@ -691,8 +691,8 @@ class RaycasterView// extends CanvasView
         let raynearx = lx;
         let rayneary = ly;
         
-        let rayStepJolt = 0.1;
-        
+        const rayStepJolt = 0.1;
+        const zmul = 1 / 1.008;
         for (let x = 0; x < xRes; x++) //for each screen column
         {
             ymin = screenheight
@@ -700,8 +700,6 @@ class RaycasterView// extends CanvasView
             // rayStepAccl = 0.1;
             let a = 0.5;
             let z = 0;
-            
-            let zmul = 1 / 1.008;
             
             for (z = zFarClip; z > 1; z *= zmul)
             //for (z = zFarClip; z > 0; z--)// /= 1.008)
@@ -743,6 +741,7 @@ class RaycasterView// extends CanvasView
                 let flag = 1//ytop <= ybot ? 1 : 0; //Optimisation to avoid if. just <?
                 ytop = ytop < 0 ? 0 : ytop;   
                 ybot = ybot > screenheight ? screenheight : ybot;   
+				//ybot = screenheight; 
                 //ybot = (0 * invz + screenheight)|0;
                 //let flag = 1;
                 let bufoffset = ytop * xRes + x; //1D index into screen buffer
