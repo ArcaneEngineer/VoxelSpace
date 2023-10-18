@@ -63,10 +63,7 @@ export default class GameView
         //"So it turns out that the only solution to this was cloning the canvas, replacing it in the DOM with its own clone, and then using transferControlToOffscreen on the clone"
         //from https://stackoverflow.com/questions/46546066/reattach-the-canvas-context-after-using-transfercontroltooffscreen
         const raycastercanvas = document.getElementById("firstperson");
-        raycastercanvas.width        = window.innerWidth//window.innerWidth;
-        raycastercanvas.height       = window.innerHeight//raycastercanvas.width / aspect;
-        raycastercanvas.style.width  = window.innerWidth  + "px";
-        raycastercanvas.style.height = window.innerHeight + "px";
+		this.setDimensions(raycastercanvas);
         const raycasteroffscreencanvas = raycastercanvas.transferControlToOffscreen();
         
         const mapcanvas = document.getElementById("map");
@@ -110,5 +107,19 @@ export default class GameView
     }
 
     */
+	setDimensions(raycastercanvas)
+	{
+			
+		raycastercanvas.width        = window.innerWidth//window.innerWidth;
+        raycastercanvas.height       = window.innerHeight//raycastercanvas.width / aspect;
+        raycastercanvas.style.width  = window.innerWidth  + "px";
+        raycastercanvas.style.height = window.innerHeight + "px";
+		
+		//FLIPPED FOR COL-ALIGNED (COL-MAJOR) TEXTURE MEMORY SUITED TO RAYCASTER. 
+		// raycastercanvas.width        = window.innerHeight
+        // raycastercanvas.height       = window.innerWidth
+        // raycastercanvas.style.width  = window.innerHeight  + "px";
+        // raycastercanvas.style.height = window.innerWidth + "px";
+	}
 
 }
