@@ -216,7 +216,7 @@ RenderTerrainSurface(camera, map, xRes, yRes)
                 mapSamples[mapoffset] = mapStoreSamples ? 0xFFFFFFFF : 0;
                 
                 let mapheight = mapaltitude[mapoffset];
-                let relheight = (camheight - mapheight) //* sinpitch;
+                let relheight = (mapheight - camheight) //* sinpitch;
                 
 				
 				//SCREEN SPACE
@@ -224,22 +224,26 @@ RenderTerrainSurface(camera, map, xRes, yRes)
                 //let zzz = z / aspectRatioScaledToNear;
                 let invzzz = aspectRatioScaledToNear / z;//zz;//(yk / zz) * (screenheight / nearWidth);
 				
-                let ybot = ((relheight + 0 ) * invzzz + horizon)|0;
-                let ytop = ((relheight + 1 ) * invzzz + horizon)|0;
+                let ybot = (horizon+(relheight + 0 ) * invzzz)|0;
+                let ytop = (horizon+(relheight + 1 ) * invzzz)|0;
                 
 				//let flag = 1//ytop <= ybot ? 1 : 0;
 				
                 ybot = ybot < 0 ? 0 : ybot;   
                 ytop = ytop > xRes ? xRes : ytop;
-                
-				let bufoffset = ytop + xRes * x; //1D index into screen buffer
+                let ydiff = ytop - ybot;
+				
+				let bufoffset = xRes * x + ybot; //1D index into screen buffer
 				//let bufoffset = ytop * xRes + x; //1D index into screen buffer
 				//let bufoffset = x * yRes + ytop; //1D index into screen buffer
                 let color = mapcolor[mapoffset];
-                let heightOnCol = 0;
+                //let heightOnCol = 0;
                 
+				//*THIS IS WHERE THE SLOWDOWN LIES:*
+				//TODO use a Float64Array to write all values faster? (maybe 2x)
                 //TODO if writing row-wise (unfragmented) we could count the number of this color, then use a memset to cover multiple pixels at once -
                 //https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
+				
                 for (let k = ybot; k < ytop; k++)
                 {
                     //heightOnCol = camheight - (k - horizon) * zzz; // / (invzzz);
@@ -248,12 +252,18 @@ RenderTerrainSurface(camera, map, xRes, yRes)
 					
                     bufoffset += 1;//xRes; //flag// * xRes;
                 }
+				
+				//buf32.fill(color, bufoffset, bufoffset + ydiff);
             }
+			//buf32.fill(mapcolor[3], xRes * x + 0, xRes * x + 500 );
             
             //TODO adjust ray angle by interpolation between left and right edges, ON the near plane.
             raynearx += sx;
             rayneary += sy;
         }
+		// let bufoffset = xRes * 600 + 600;
+		// buf32[bufoffset] = mapcolor[3];
+		// console.log(xRes);
     }
     
     RenderTerrainNovalogic(camera, map, screenwidth, screenheight)
