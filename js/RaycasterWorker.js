@@ -1,16 +1,13 @@
-//importScripts('Time.js')
 importScripts('CanvasView.js')
 importScripts('RaycasterView.js')
 importScripts('MapView.js')
-//importScripts('Camera.js')
 
-//var a = {test: 'boo'};
-
-//const fpsTime = new Time();
-let mapView = undefined; //new MapView(map);
-let raycaster = undefined;
 var animating = false;
-var updateCount = 0;
+
+const mapView = new MapView()//map);
+const raycaster = new RaycasterView(null);//fpsTime);
+raycaster.mapView = mapView;
+
 onmessage = (evt) =>
 {   
     let typey = evt.data.typey;
@@ -18,20 +15,8 @@ onmessage = (evt) =>
     let mapIn = evt.data.map;
     let renderNovalogic = evt.data.renderNovalogic;
     
-    
-    // if (updateCount < 1)
-    // {
-        // console.log(updateCount);
-        // console.log(map);
-    // }
     switch (typey)
     {
-        case "start":
-            mapView = new MapView()//map);
-            raycaster = new RaycasterView(null);//fpsTime);
-            raycaster.mapView = mapView;
-            postMessage({typey: "started"});
-        break;
         case "update":
             //this *is* the update; requestAnimationFrame will take it from here,
             //updating at the right time *according* to this current dataset.
@@ -52,11 +37,7 @@ onmessage = (evt) =>
             }
         break;
         case "resize":
-            
-            
             raycaster.OnResizeWindow(evt.data.raycasteroffscreencanvas, evt.data.mapoffscreencanvas, evt.data.samplesoffscreencanvas, camera.screenwidth, camera.screenheight, mapIn);
         break;
     }
-    updateCount++;
-    
 };

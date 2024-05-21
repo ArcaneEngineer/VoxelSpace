@@ -30,7 +30,7 @@ class RaycasterView// extends CanvasView
         this.mapView = mapView;
         //this.fpsTime = new Time();
         
-        console.log("RAycasterView ctor");
+        console.log("RaycasterView ctor");
     }
     
     OnResizeWindow(raycasteroffscreencanvas, mapoffscreencanvas, samplesoffscreencanvas, screenwidth, screenheight, map)

@@ -31,18 +31,8 @@ function StartRenderThread()
     raycasterWorker = new Worker('./js/RaycasterWorker.js');
         
     raycasterWorker.postMessage({typey: "start"});
-    
-    return new Promise(function(resolve)
-    {
-        raycasterWorker.onmessage = (e) =>
-        {
-            if (e.data.typey == "started")
-            {
-                console.log("raycaster worker thread started.");
-                resolve();
-            }
-        }
-    }); 
+   
+	return Promise.resolve(); //this function is not asynch anymore.
 }
 
 function Init()
